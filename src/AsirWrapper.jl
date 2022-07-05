@@ -15,6 +15,7 @@ function slash2Dslash(eq::String)
 	return replace(eq, r"([0-9a-zA-Z\)])\/([0-9a-zA-Z\(])"=>s"\1//\2")
 end
 
+
 """
 	vec2str(v::Vector{Num}; delim=",")
 	vec2str(v::Symbolics.Arr; delim=",")
@@ -38,6 +39,24 @@ function vec2str(vs...; delim=",")
 	end
 	return join(strs, delim)
 end
+
+
+"""
+Return the version of available Asir as an integer if exists, and otherwise return `nothing`. 
+"""
+function isAsirAvailable()
+	asir_res = runAsir("version();") |> parseAsir
+	if length(asir_res) == 2 
+		asir_ver = tryparse(Int, asir_res[1])
+		if !isnothing(asir_ver)
+			return asir_ver
+		end
+	end
+
+	# println("Worning: Asir is not available")
+	return nothing
+end
+
 
 # --------------------- Interfaces ---------------------
 """
@@ -67,6 +86,7 @@ function runAsir(commands::AbstractString)
 	return read(pipeline(`asir -quiet -f $tmpFile`, stderr=tmpErrFile), String)
 end
 
+
 """
 	parseAsir(asir_res::String)
 
@@ -76,18 +96,7 @@ function parseAsir(asir_res::String)
 	return asir_res |> (s->split(s, "\n"))
 end
 
-"""
-Return the version of available Asir as an integer if exists, and otherwise return `nothing`. 
-"""
-function isAsirAvailable()
-	asir_res = runAsir("version();") |> parseAsir
-	if length(asir_res) == 2 
-		asir_ver = tryparse(Int, asir_res[1])
-		if !isnothing(asir_ver)
-			return asir_ver
-		end
-	end
-
-	# println("Worning: Asir is not available")
-	return nothing
+function evalAsir(asir_res::AbstractString, vars_list::Vector{Num})
+	eval(Meta.parse("asir_tmpFunc($(vec2str(vars_list))) = $(asir_res)"))
+	return Base.invokelatest(asir_tmpFunc, vars_list...)
 end

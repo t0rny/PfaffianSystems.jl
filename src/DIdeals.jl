@@ -4,6 +4,7 @@ end
 
 abstract type AbstractIdeal end
 
+
 """
 	DIdeal <: AbstractIdeal
 
@@ -12,7 +13,7 @@ D-Ideal type
 struct DIdeal <: AbstractIdeal
 	gens::Vector{Num} 
 	v2d::Bijection{Num, Num}
-	flags::Dict{String, Bool}
+	flags::Dict{String, Union{Nothing, Bool}}
 
 	function DIdeal(gens::Vector{Num}, v2d::Bijection{Num, Num})
 		gen_vars = get_variables.(gens) .|> Set |> (s->union(s...))
@@ -25,7 +26,7 @@ struct DIdeal <: AbstractIdeal
 				_v2d[k] = v
 			end
 		end
-		new(copy(gens), _v2d, Dict{String, Bool}("isZeroDim"=>false))
+		new(copy(gens), _v2d, Dict{String, Union{Nothing, Bool}}("isZeroDim"=>nothing))
 	end
 end
 
@@ -33,6 +34,7 @@ function makeTestVarsAndIdeal()
 	x, dx, v2d = genVars("x", 3)
 	return x, dx, v2d, DIdeal([dx[1]^2 + 1, x[2]*dx[2] - 2, x[3]*dx[3] - 1], v2d)
 end
+
 
 """
 	stdmon!(I::DIdeal[, ordered_vars::Vector{Num}])
@@ -57,29 +59,30 @@ function stdmon!(I::DIdeal, ordered_vars::OrderedSet{Num})
 	# (length(asir_res) != 1) && return nothing
 	if length(asir_res) != 1
 		I.flags["isZeroDim"] = false
-		return nothing
+		return Vector{Num}()
 	end
 
 	I.flags["isZeroDim"] = true
 	vars_list = cat(collect(I.v2d.domain), collect(I.v2d.range); dims=1)
-	eval(Meta.parse("stdmon_tmpFunc($(vec2str(vars_list))) = $(asir_res[1])"))
-	return Base.invokelatest(stdmon_tmpFunc, vars_list...)
+	return evalAsir(asir_res[1], vars_list)
 end
 stdmon!(I::DIdeal) = stdmon!(I, I.v2d.domain |> OrderedSet{Num})
+stdmon!(I::DIdeal, vars::Vector{Num}) = stdmon!(I, vars |> OrderedSet{Num})
+
 
 """
 	isZeroDimensional(I::DIdeal)
 
 Check if DIdeal `I` is zero-dimensional. 
 """
-function isZeroDimensional(I::DIdeal)
-	if I.flags["isZeroDim"]
-		return true
-	else
-		stdmon!(I)
+function isZeroDimensional(I::DIdeal; std_mons=Vector())
+	if !isnothing(I.flags["isZeroDim"])
 		return I.flags["isZeroDim"]
 	end
+	stdmon!(I) |> (s->append!(std_mons, s))
+	return I.flags["isZeroDim"]
 end
+
 
 """
 	eliminationIdeal(I::DIdeal, elim_vars::OrderedSet{Num})
@@ -112,14 +115,14 @@ function eliminationIdeal(I::DIdeal, elim_vars::OrderedSet{Num})
 	(length(asir_res) != 1) && return nothing
 
 	vars_list = cat(rem_vars, elim_vars, rem_dos, elim_dos; dims=1)
-	eval(Meta.parse("elim_tmpFunc($(vec2str(vars_list))) = $(asir_res[1])"))
-	elimOrdGens = Base.invokelatest(elim_tmpFunc, vars_list...)
+	elimOrdGens = evalAsir(asir_res[1], vars_list)
 
 	notHasElimVar(diffOp) = (get_variables(diffOp), [elim_vars; elim_dos]) .|> Set |> (s->intersect(s...)) |> isempty
 
 	return DIdeal(filter(notHasElimVar, elimOrdGens), Dict((v, d) for (v,d) in zip(rem_vars, rem_dos)) |> Bijection)
 end
 eliminationIdeal(I::DIdeal, elim_vars::Vector{Num}) = eliminationIdeal(I, OrderedSet(elim_vars))
+
 
 """
 	idealIntersection(Is::DIdeal...)
@@ -157,8 +160,7 @@ function idealIntersection(Is::DIdeal...)
 	(length(asir_res) != 1) && return nothing
 
 	vars_list = cat(t, vars, dt, diffops; dims=1)
-	eval(Meta.parse("intersect_tmpFunc($(vec2str(vars_list))) = $(asir_res[1])"))
-	elimOrdGens = Base.invokelatest(intersect_tmpFunc, vars_list...)
+	elimOrdGens = evalAsir(asir_res[1], vars_list)
 
 	notHasTmpVar(diffOp) = (get_variables(diffOp), [t; dt]) .|> Set |> (s->intersect(s...)) |> isempty
 
