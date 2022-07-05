@@ -1,5 +1,7 @@
 module PfaffianSystems
 
+import Base: sort
+
 # Write your package code here.
 using Bijections
 using Symbolics
@@ -8,6 +10,12 @@ using SymbolicUtils: PolyForm
 using DynamicPolynomials
 using DynamicPolynomials: variables, exponents, coefficient, term
 
+function Bijection{S, T}(dict::AbstractDict{S, T}) where S where T
+	return Bijection(dict)
+end
+
+sort(v::Vector{Num}) = v[sortperm(string.(v))]
+export sort
 
 include("DiffOps.jl")
 export genVars, genVars!, apply_do
@@ -24,6 +32,6 @@ include("AsirWrapper.jl")
 export isAsirAvailable, vec2str
 
 include("PfaffSys.jl")
-export PfaffianSystem, computePfaffSys
+export PfaffianSystem
 
 end

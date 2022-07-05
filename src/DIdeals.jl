@@ -1,7 +1,3 @@
-function Bijection{S, T}(dict::AbstractDict{S, T}) where S where T
-	return Bijection(dict)
-end
-
 abstract type AbstractIdeal end
 
 

@@ -7,6 +7,8 @@ using Test
     # Write your tests here.
 end
 
+using PfaffianSystems: makeTestVarsAndIdeal
+
 @testset "DiffOps.jl" begin
     x, dx, var2do = genVars("x", 3)
     @test length(x) == length(dx) == length(var2do) == 3
@@ -46,4 +48,9 @@ using Symbolics: @variables
     @test vec2str(x) == "x1,x2,x3"
     @test vec2str(y) == "y1,y2"
     @test vec2str(os) == "x2,x1"
+end
+
+@testset "PfaffSys.jl" begin
+    x, dx, var2do, I = makeTestVarsAndIdeal()
+    @test_nowarn PfaffianSystem(I)
 end
