@@ -25,6 +25,14 @@ jobs:
         arch:
           - x64
     steps:
+      - name: install Risa/Asir
+        run: |
+          sudo wget -O /etc/apt/sources.list.d/fe-deb2.list http://www.math.kobe-u.ac.jp/deb2/fe-deb2.list
+          sudo wget -O /usr/share/keyrings/fe-deb2-archive-keyring.gpg  http://www.math.kobe-u.ac.jp/deb2/fe-deb2-archive-keyring.gpg
+          sudo apt update
+          touch /tmp/i-agree-with-asir-license
+          sudo apt install openxm
+          rm /tmp/i-agree-with-asir-license
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
         with:
@@ -37,9 +45,9 @@ jobs:
       - uses: codecov/codecov-action@v2
         with:
           files: lcov.info
-      - uses: julia-actions/julia-uploadcoveralls@v1
-        env:
-          COVERALLS_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
+      # - uses: julia-actions/julia-uploadcoveralls@v0
+      #   env:
+      #     COVERALLS_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
   docs:
     name: Documentation
     runs-on: ubuntu-latest
