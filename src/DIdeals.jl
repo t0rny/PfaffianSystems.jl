@@ -121,11 +121,11 @@ eliminationIdeal(I::DIdeal, elim_vars::Vector{Num}) = eliminationIdeal(I, Ordere
 
 
 """
-	idealIntersection(Is::DIdeal...)
+	intersectionIdeal(Is::DIdeal...)
 
 Return the intersection of the D-ideals `Is[1]`, `Is[2]`, ...
 """
-function idealIntersection(Is::DIdeal...)
+function intersectionIdeal(Is::DIdeal...)
 	m = length(Is)
 	t, dt, v2d_t = genVars("t", m)
 	v2d_all = Bijection{Num, Num}()

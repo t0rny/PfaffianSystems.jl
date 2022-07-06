@@ -35,7 +35,7 @@ end
     I3 = eliminationIdeal(I, x[1:2])
     @test isequal(I3.gens, [x[3]*dx[3] - 1])
     @test isequal(I3.v2d, Bijection(x[3], dx[3]))
-    @test_nowarn idealIntersection(I, J)
+    @test_nowarn intersectionIdeal(I, J)
 end
 
 using Symbolics: @variables
