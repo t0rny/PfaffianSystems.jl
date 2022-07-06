@@ -60,21 +60,67 @@ function buildFuncA(pf::PfaffianSystem)
 	[build_function(pf.A[v], vars)[1] |> eval for v in vars]
 end
 
+# private
+function integrate_core(funcA, init_vecs::AbstractMatrix{Float64}, z_init::AbstractVector{Float64}, z_term::AbstractVector{Float64})
+	z_traj(s) = ((z_term-z_init)*s + z_init, (z_term-z_init))
+	PfODE = (dq, q, param, s)->begin
+		zs, dzds = (param)(s)
+		dq .= reduce(+, funcA(zs).*dzds)*q
+	end
+
+	pf_ode = ODEProblem(PfODE, init_vecs, [0, 1], z_traj)
+	sol = solve(pf_ode, abstol=1e-6, reltol=1e-6)
+	@assert sol.retcode == :Success "Error: ode solver failed"
+	return sol.u
+end
+
 function integrate(pf::PfaffianSystem, init_vecs::Matrix{<:Real}, z_init::Vector{<:Real}, z_term::Vector{<:Real})
 	d = length(pf.std_mons)
 	@assert size(init_vecs)[1] == d "Error: invalid length of initial vectors"
 	@assert length(pf.v2d.domain) == length(z_init) == length(z_term) "Error: invalid lengths of initial and terminal z vectors"
 
-	z_traj(s) = ((z_term-z_init)*s + z_init, (z_term-z_init))
+	# z_traj(s) = ((z_term-z_init)*s + z_init, (z_term-z_init))
 
 	funcA(s) = map(a->Base.invokelatest(a, s), buildFuncA(pf))
 
-	PfODE = (q, param, s)->begin
-		zs, dzds = (param)(s)
-		reduce(+, funcA(zs).*dzds)*q
-	end
+	# PfODE = (dq, q, param, s)->begin
+	# 	zs, dzds = (param)(s)
+	# 	dq .= reduce(+, funcA(zs).*dzds)*q
+	# end
 
-	pf_ode = ODEProblem(PfODE, init_vecs, [0, 1], z_traj)
-	sol = solve(pf_ode, abstol=1e-6, reltol=1e-6)
+	# pf_ode = ODEProblem(PfODE, init_vecs, [0, 1], z_traj)
+	# sol = solve(pf_ode, abstol=1e-6, reltol=1e-6)
+	# return sol
+	sol = integrate_core(
+		funcA, 
+		convert(Matrix{Float64}, init_vecs), 
+		convert(Vector{Float64}, z_init), 
+		convert(Vector{Float64}, z_term)
+		)
 	return sol
+end
+
+function integrate(pf::PfaffianSystem, init_vecs::Matrix{<:Real}, z_traj::Matrix{<:Real})
+	d = length(pf.std_mons)
+	N = size(z_traj)[2]
+	@assert size(init_vecs)[1] == d "Error: invalid length of initial vectors"
+	@assert length(pf.v2d.domain) == size(z_traj)[1] "Error: invalid lengths of z vectors"
+
+	vecs = fill(convert(Matrix{Float64}, init_vecs), N) 
+	z_traj = convert(Matrix{Float64}, z_traj)
+
+	funcA(s) = map(a->Base.invokelatest(a, s), buildFuncA(pf))
+
+	for i = 1:N-1
+		z_init = @view z_traj[:, i]
+		z_term = @view z_traj[:, i+1]
+		sol = integrate_core(
+			funcA, 
+			vecs[i], 
+			z_init, 
+			z_term
+			)
+		vecs[i+1] = sol[length(sol)]
+	end
+	return vecs
 end
