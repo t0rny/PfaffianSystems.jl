@@ -6,6 +6,7 @@ version = "0.1.0"
 [deps]
 Bijections = "e2ed5e7c-b2de-5872-ae92-c73ca462fb04"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 DynamicPolynomials = "7c1d4256-1411-5781-91ec-d7bc3513ac07"
 Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"

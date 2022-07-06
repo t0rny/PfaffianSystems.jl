@@ -52,5 +52,11 @@ end
 
 @testset "PfaffSys.jl" begin
     x, dx, var2do, I = makeTestVarsAndIdeal()
-    @test_nowarn PfaffianSystem(I)
+    pf = @test_nowarn PfaffianSystem(I)
+    funcAs = @test_nowarn buildFuncA(pf)
+    x_bar = [0, 2, 1]
+    @test funcAs[1](x_bar) == [0 1; -1 0]
+    @test funcAs[2](x_bar) == [1 0; 0 1]
+    @test funcAs[3](x_bar) == [1 0; 0 1]
+    @test_nowarn integrate(pf, [1 0; 0 1], [1, 1, 1], [3, 2, 1])
 end

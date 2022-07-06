@@ -9,6 +9,7 @@ using Symbolics: derivative, value
 using SymbolicUtils: PolyForm
 using DynamicPolynomials
 using DynamicPolynomials: variables, exponents, coefficient, term
+using DifferentialEquations: solve, ODEProblem
 
 function Bijection{S, T}(dict::AbstractDict{S, T}) where S where T
 	return Bijection(dict)
@@ -32,6 +33,6 @@ include("AsirWrapper.jl")
 export isAsirAvailable, vec2str
 
 include("PfaffSys.jl")
-export PfaffianSystem
+export PfaffianSystem, buildFuncA, integrate
 
 end
