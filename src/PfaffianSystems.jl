@@ -26,7 +26,7 @@ using DataStructures: OrderedSet
 export OrderedSet
 include("DIdeals.jl")
 export DIdeal, stdmon!, isZeroDimensional, makeTestVarsAndIdeal
-export eliminationIdeal, intersectionIdeal
+export eliminationIdeal, intersectionIdeal, integrationIdeal
 
 using Symbolics: scalarize
 include("AsirWrapper.jl")

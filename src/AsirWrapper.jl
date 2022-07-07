@@ -22,6 +22,7 @@ end
 	vec2str(v::OrderedSet{Num}; delim=",")
 Return a string consiting of all elements of `v` with delimiter `delim`. 
 """
+vec2str(v::AbstractVector; delim=",") = string.(v) |> (s->join(s, delim))
 vec2str(v::Vector{Num}; delim=",") = string.(v) .|> removeSqBra .|> add_ast |> (s->join(s, delim))
 vec2str(v::Symbolics.Arr; delim=",") = vec2str(v |> scalarize; delim=delim)
 vec2str(v::OrderedSet{Num}; delim=",") = vec2str(v |> collect; delim=delim)
@@ -83,7 +84,9 @@ function runAsir(commands::AbstractString)
 	# return read(`asir -quiet -f $tmpFile '2>&1'`, String)
 
 	# redirect stderror message to temporary file as it makes tests fail
-	return read(pipeline(`asir -quiet -f $tmpFile`, stderr=tmpErrFile), String)
+	asirout = read(pipeline(`asir -quiet -f $tmpFile`, stderr=tmpErrFile), String)
+	# @info open(tmpErrFile, "r") do f read(f, String) end
+	return asirout
 end
 
 

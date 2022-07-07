@@ -25,11 +25,12 @@ using PfaffianSystems: makeTestVarsAndIdeal
 end
 
 @testset "DIdeals.jl" begin
-    x, dx, var2do = genVars("x", 3)
-    I = @test_nowarn DIdeal([dx[1]^2 + 1, x[2]*dx[2] - 2, x[3]*dx[3] - 1], var2do)
+    # x, dx, var2do = genVars("x", 3)
+    # I = @test_nowarn DIdeal([dx[1]^2 + 1, x[2]*dx[2] - 2, x[3]*dx[3] - 1], var2do)
+    x, dx, var2do, I = @test_nowarn makeTestVarsAndIdeal()
     y, dy, var2do = genVars!("y", 2, var2do)
     J = DIdeal([dx[1]^2 + 1, x[2]*dy[2] - 2], var2do)
-    @test isequal(stdmon!(I, OrderedSet(x)), [dx[1], 1])
+    @test isequal(stdmon!(I, OrderedSet(x)), [dx[2], 1])
     @test isZeroDimensional(I)
     @test !isZeroDimensional(J)
     I3 = eliminationIdeal(I, x[1:2])
@@ -55,8 +56,8 @@ end
     pf = @test_nowarn PfaffianSystem(I)
     funcAs = @test_nowarn buildFuncA(pf)
     x_bar = [0, 2, 1]
-    @test funcAs[1](x_bar) == [0 1; -1 0]
-    @test funcAs[2](x_bar) == [1 0; 0 1]
+    @test funcAs[1](x_bar) == [0 0; 0 0]
+    @test funcAs[2](x_bar) == [0 1; -1 0]
     @test funcAs[3](x_bar) == [1 0; 0 1]
     @test_nowarn integrate(pf, [1 0; 0 1], [1, 1, 1], [3, 2, 1])
 end
