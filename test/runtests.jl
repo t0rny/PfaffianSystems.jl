@@ -38,7 +38,9 @@ end
     @test isequal(I3.v2d, Bijection(x[3], dx[3]))
     @test_nowarn intersectionIdeal(I, J)
     @test_nowarn integrationIdeal(I, x[1:1])
-    # @test integrationIdeal(I, x[3:3])
+    # @test_nowarn integrationIdeal(I, x[1:1])
+    # @test integrationIdeal(I, x[3:3]) |> isnothing
+    @test_nowarn restrictionIdeal(I, x[1:1])
 end
 
 using Symbolics: @variables

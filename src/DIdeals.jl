@@ -199,3 +199,39 @@ function integrationIdeal(I::DIdeal, integ_vars::OrderedSet{Num})
 	return DIdeal(integGens, ((v, d) for (v,d) in zip(rem_vs, rem_dos)) |> Dict |> Bijection)
 end
 integrationIdeal(I::DIdeal, integ_vars::Vector{Num}) = integrationIdeal(I, OrderedSet(integ_vars))
+
+
+function restrictionIdeal(I::DIdeal, rest_vars::OrderedSet{Num})
+	@assert issubset(rest_vars, I.v2d.domain) "Error: unknown variables in the second argument"
+
+	rest_vs = rest_vars |> collect |> sort
+	rem_vs = setdiff(I.v2d.domain, rest_vars) |> collect |> sort
+
+	rest_dos = map(s->I.v2d[s], rest_vs)
+	rem_dos = map(s->I.v2d[s], rem_vs)
+
+	m = length(rest_vs)
+	n = m + length(rem_vs)
+
+	asir_cmd = 
+	"""
+	load("nk_restriction.rr")\$
+	V = [$(vec2str(rest_vs, rem_vs))]\$
+	DV = [$(vec2str(rest_dos, rem_dos))]\$
+	M = [$(vec2str((1:n .< m+1) .|> Int |> collect))]\$
+	J = [$(vec2str(I.gens))]\$
+	GB = nk_restriction.restriction_ideal(J, V, DV, M);
+	GB;
+	"""
+
+	asir_res = asir_cmd |> runAsir |> parseAsir
+	asir_res = filter!((s)->(startswith(s, "[")), asir_res)
+
+	(length(asir_res) != 1) && return nothing
+
+	vars_list = cat(rem_vs, rem_dos; dims=1)
+	restGens = evalAsir(asir_res[1], vars_list)
+
+	return DIdeal(restGens, ((v, d) for (v,d) in zip(rem_vs, rem_dos)) |> Dict |> Bijection)
+end
+restrictionIdeal(I::DIdeal, rest_vars::Vector{Num}) = restrictionIdeal(I, OrderedSet(rest_vars))
