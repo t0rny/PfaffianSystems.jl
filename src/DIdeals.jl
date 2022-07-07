@@ -24,6 +24,7 @@ struct DIdeal <: AbstractIdeal
 		end
 		new(copy(gens), _v2d, Dict{String, Union{Nothing, Bool}}("isZeroDim"=>nothing))
 	end
+	DIdeal(gens::AbstractVector, v2d::Bijection{Num, Num}) = DIdeal(Num.(gens), v2d)
 end
 
 function makeTestVarsAndIdeal()
