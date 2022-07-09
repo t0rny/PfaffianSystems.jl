@@ -19,7 +19,7 @@ sort(v::Vector{Num}) = v[sortperm(string.(v))]
 export sort
 
 include("DiffOps.jl")
-export genVars, genVars!, apply_do
+export genVars, addVars, apply_do
 
 using Symbolics: get_variables
 using DataStructures: OrderedSet

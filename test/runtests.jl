@@ -15,7 +15,7 @@ using PfaffianSystems: makeTestVarsAndIdeal
     @test map(s->haskey(var2do, s), x) |> all
     @test map(s->haskey(inv(var2do), s), dx) |> all
 
-    y, dy, var2do = genVars!("y", var2do)
+    y, dy, var2do = addVars("y", var2do)
     @test length(var2do) == 4
     @test haskey(var2do, y)
     @test haskey(inv(var2do), dy)
@@ -27,7 +27,7 @@ end
 @testset "DIdeals.jl" begin
     x, dx, var2do = genVars("x", 3)
     I = @test_nowarn DIdeal([dx[1]^2 + 1, x[2]*dx[2] - 2, x[3]*dx[3] - 1], var2do)
-    y, dy, var2do = genVars!("y", 2, var2do)
+    y, dy, var2do = addVars("y", 2, var2do)
     J = DIdeal([dx[1]^2 + 1, x[2]*dy[2] - 2], var2do)
     @test isequal(stdmon!(I, OrderedSet(x)), [dx[1], 1])
     @test isZeroDimensional(I)

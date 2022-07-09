@@ -1,8 +1,8 @@
 """
-	genVars!(name::AbstractString[, n::Integer, v2d::Bijection])
+	addVars(name::AbstractString[, n::Integer, v2d::Bijection])
 
 Generate a Symbolics variable `name` and its corresponding differential operator d`name`. When `n` is given, generate vectors [`name`1...`name`n] and [d`name`1...d`name`n]. 
-The correspondence between `name` and d`name` is stored to the bijection `v2d`. 
+The correspondence between `name` and d`name` is added to the bijection `v2d`. 
 
 # Examples
 
@@ -10,11 +10,11 @@ The correspondence between `name` and d`name` is stored to the bijection `v2d`.
 julia> x, dx, v2d = genVars("x")
 (x, dx, Bijection{Symbolics.Num,Symbolics.Num} (with 1 pairs))
 
-julia> y, dy, v2d = genVars!("y", 2, v2d)
+julia> y, dy, v2d = addVars("y", 2, v2d)
 (Symbolics.Num[y1, y2], Symbolics.Num[dy1, dy2], Bijection{Symbolics.Num,Symbolics.Num} (with 3 pairs))
 ```
 """
-function genVars!(name::AbstractString, v2d::Bijection{Num, Num})
+function addVars(name::AbstractString, v2d::Bijection{Num, Num})
 	var_ex = Symbol(name)
 	diffop_ex = Symbol("d", var_ex)
 	var, diffop = @variables $var_ex, $diffop_ex
@@ -22,12 +22,12 @@ function genVars!(name::AbstractString, v2d::Bijection{Num, Num})
 	return var, diffop, v2d
 end
 
-function genVars!(name::AbstractString, n::Integer, v2d::Bijection{Num, Num})
+function addVars(name::AbstractString, n::Integer, v2d::Bijection{Num, Num})
 	vars = Vector{Num}(undef, n)
 	diffops = Vector{Num}(undef, n)
 
 	for i = 1:n
-		vars[i], diffops[i], v2d = genVars!(name*string(i), v2d)
+		vars[i], diffops[i], v2d = addVars(name*string(i), v2d)
 	end
 
 	return vars, diffops, v2d
@@ -37,7 +37,7 @@ end
 	genVars(name::AbstractString[, n::Integer])
 
 Generate a Symbolics variable `name` and its corresponding differential operator d`name`. When `n` is given, generate vectors [`name`1...`name`n] and [d`name`1...d`name`n]. 
-The correspondence between `name` and d`name` is returned as a new bijection `v2d`, which will be provided to `genVars!`. 
+The correspondence between `name` and d`name` is returned as a new bijection `v2d`, which will be provided to `addVars`. 
 
 # Examples
 
@@ -45,12 +45,12 @@ The correspondence between `name` and d`name` is returned as a new bijection `v2
 julia> x, dx, v2d = genVars("x")
 (x, dx, Bijection{Symbolics.Num,Symbolics.Num} (with 1 pairs))
 
-julia> y, dy, v2d = genVars!("y", 2, v2d)
+julia> y, dy, v2d = addVars("y", 2, v2d)
 (Symbolics.Num[y1, y2], Symbolics.Num[dy1, dy2], Bijection{Symbolics.Num,Symbolics.Num} (with 3 pairs))
 ```
 """
-genVars(name::AbstractString) = genVars!(name, Bijection{Num, Num}())
-genVars(name::AbstractString, n::Integer) = genVars!(name, n, Bijection{Num, Num}())
+genVars(name::AbstractString) = addVars(name, Bijection{Num, Num}())
+genVars(name::AbstractString, n::Integer) = addVars(name, n, Bijection{Num, Num}())
 
 """
 	apply_dmon(DOmon::AbstractTerm, F::Num, p2s::Bijection, v2d::Bijection)
