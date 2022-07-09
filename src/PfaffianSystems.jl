@@ -29,6 +29,7 @@ export DIdeal, stdmon!, isZeroDimensional, makeTestVarsAndIdeal
 export eliminationIdeal, intersectionIdeal
 
 using Symbolics: scalarize
+using Base: @invokelatest
 include("AsirWrapper.jl")
 export isAsirAvailable, vec2str
 

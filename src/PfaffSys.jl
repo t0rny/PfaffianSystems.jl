@@ -81,7 +81,10 @@ function integrate(pf::PfaffianSystem, init_vecs::Matrix{<:Real}, z_init::Vector
 
 	# z_traj(s) = ((z_term-z_init)*s + z_init, (z_term-z_init))
 
-	funcA(s) = map(a->Base.invokelatest(a, s), buildFuncA(pf))
+	# funcA(s) = map(a->Base.invokelatest(a, s), buildFuncA(pf))
+	funcA(s) = map(buildFuncA(pf)) do fA
+		@invokelatest fA(s)
+	end
 
 	# PfODE = (dq, q, param, s)->begin
 	# 	zs, dzds = (param)(s)
@@ -109,7 +112,10 @@ function integrate(pf::PfaffianSystem, init_vecs::Matrix{<:Real}, z_traj::Matrix
 	vecs = fill(convert(Matrix{Float64}, init_vecs), N) 
 	z_traj = convert(Matrix{Float64}, z_traj)
 
-	funcA(s) = map(a->Base.invokelatest(a, s), buildFuncA(pf))
+	# funcA(s) = map(a->Base.invokelatest(a, s), buildFuncA(pf))
+	funcA(s) = map(buildFuncA(pf)) do fA
+		@invokelatest fA(s)
+	end
 
 	for i = 1:N-1
 		z_init = @view z_traj[:, i]

@@ -58,7 +58,7 @@ genVars(name::AbstractString, n::Integer) = genVars!(name, n, Bijection{Num, Num
 Apply a term of differential operator `DOterm` to an expression `F`. 
 The bijection `p2s` relates a MulltivariatePolunomials expression to a SymbolicUtils one, and `d2v` does a differential operator to its corresponding variable. 
 """
-function apply_doterm(DOterm::AbstractTerm, F::Num, p2s::Bijection, v2d::Bijection)
+function apply_doterm(DOterm::AbstractTerm, F::Num, p2s::Bijection, v2d::Bijection{Num, Num})
 	d2v = inv(v2d)
 	coef = coefficient(DOterm)
 	mon = monomial(DOterm)
