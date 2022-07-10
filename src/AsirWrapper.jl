@@ -102,5 +102,5 @@ end
 function evalAsir(asir_res::AbstractString, vars_list::Vector{Num})
 	eval(Meta.parse("asir_tmpFunc($(vec2str(vars_list))) = $(asir_res)"))
 	# return Base.invokelatest(asir_tmpFunc, vars_list...)
-	return @invokelatest asir_tmpFunc(vars_list...)
+	return (@invokelatest asir_tmpFunc(vars_list...)) .|> Num
 end

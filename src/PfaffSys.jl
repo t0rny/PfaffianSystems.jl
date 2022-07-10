@@ -28,7 +28,6 @@ function _computePfaffSys(I::DIdeal, ordered_vars::OrderedSet{Num})
 
 	asir_res = asir_res[2:end]
 	m = length(std_mons)
-	n = length(ordered_vars)
 
 	A = Dict{Num, Matrix{Num}}()
 	# for i = 1:n
@@ -53,6 +52,12 @@ end
 function PfaffianSystem(I::DIdeal)
 	@assert isZeroDimensional(I) "Error: given ideal is not zero-dimensional"
 	return _computePfaffSys(I, I.v2d.domain |> collect |> sort |> OrderedSet)
+end
+
+function applyStdMons(pf::PfaffianSystem, F::Num)
+	return map(pf.std_mons) do dmon
+		apply_do(dmon, F, pf.v2d)
+	end
 end
 
 function buildFuncA(pf::PfaffianSystem)

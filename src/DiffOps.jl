@@ -77,19 +77,23 @@ function apply_doterm(DOterm::AbstractTerm, F::Num, p2s::Bijection, v2d::Bijecti
 	end
 	return coef*retF
 end
-function apply_doterm(DOterm::PolyForm, F::Num, v2d::Bijection)
+function apply_doterm(DOterm::PolyForm, F::Num, v2d::Bijection{Num, Num})
 	@assert length(terms(DOterm.p)) == 1 "Error: Differnetial operator has more than 1 term"
 	apply_doterm(terms(DOterm.p)[1], F, DOterm.pvar2sym, v2d)
 end
-apply_doterm(DOterm::Num, F::Num, d2v::Bijection) = apply_doterm(DOterm |> value |> PolyForm, F, v2d)
+apply_doterm(DOterm::Num, F::Num, v2d::Bijection{Num, Num}) = apply_doterm(DOterm |> value |> PolyForm, F, v2d)
 
 
-function apply_do(DiffOp::PolyForm, F::Num, v2d::Bijection)
-	p2s = DiffOp.pvar2sym
+function apply_do(DiffOp::BasicSymbolic, F::Num, v2d::Bijection{Num, Num})
+	dp = PolyForm(DiffOp)
+	p2s = dp.pvar2sym
 	retF::Num = 0
-	for DOterm in terms(DiffOp.p)
+	for DOterm in terms(dp.p)
 		retF = retF + apply_doterm(DOterm, F, p2s, v2d)
 	end
 	return retF
 end
-apply_do(DiffOp::Num, F::Num, v2d::Bijection) = apply_do(DiffOp |> value |> PolyForm, F, v2d)
+function apply_do(DiffOp::Union{Integer, AbstractFloat}, F::Num, v2d::Bijection{Num, Num})
+	return DiffOp*F
+end
+apply_do(DiffOp::Num, F::Num, v2d::Bijection) = apply_do(DiffOp |> value, F, v2d)
