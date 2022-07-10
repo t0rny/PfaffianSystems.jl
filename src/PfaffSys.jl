@@ -1,6 +1,6 @@
 
 # private, do not check zero-dimensionality
-function computePfaffSys(I::DIdeal, ordered_vars::OrderedSet{Num})
+function _computePfaffSys(I::DIdeal, ordered_vars::OrderedSet{Num})
 
 	@assert isequal(ordered_vars, I.v2d.domain) "Error: unknown variable in second argument"
 
@@ -52,7 +52,7 @@ end
 
 function PfaffianSystem(I::DIdeal)
 	@assert isZeroDimensional(I) "Error: given ideal is not zero-dimensional"
-	return computePfaffSys(I, I.v2d.domain |> collect |> sort |> OrderedSet)
+	return _computePfaffSys(I, I.v2d.domain |> collect |> sort |> OrderedSet)
 end
 
 function buildFuncA(pf::PfaffianSystem)
@@ -61,7 +61,7 @@ function buildFuncA(pf::PfaffianSystem)
 end
 
 # private
-function integrate_core(funcA, init_vecs::AbstractMatrix{Float64}, z_init::AbstractVector{Float64}, z_term::AbstractVector{Float64})
+function _integrate_core(funcA, init_vecs::AbstractMatrix{Float64}, z_init::AbstractVector{Float64}, z_term::AbstractVector{Float64})
 	z_traj(s) = ((z_term-z_init)*s + z_init, (z_term-z_init))
 	PfODE = (dq, q, param, s)->begin
 		zs, dzds = (param)(s)
@@ -94,7 +94,7 @@ function integrate(pf::PfaffianSystem, init_vecs::Matrix{<:Real}, z_init::Vector
 	# pf_ode = ODEProblem(PfODE, init_vecs, [0, 1], z_traj)
 	# sol = solve(pf_ode, abstol=1e-6, reltol=1e-6)
 	# return sol
-	sol = integrate_core(
+	sol = _integrate_core(
 		funcA, 
 		convert(Matrix{Float64}, init_vecs), 
 		convert(Vector{Float64}, z_init), 
@@ -120,7 +120,7 @@ function integrate(pf::PfaffianSystem, init_vecs::Matrix{<:Real}, z_traj::Matrix
 	for i = 1:N-1
 		z_init = @view z_traj[:, i]
 		z_term = @view z_traj[:, i+1]
-		sol = integrate_core(
+		sol = _integrate_core(
 			funcA, 
 			vecs[i], 
 			z_init, 
