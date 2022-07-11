@@ -17,7 +17,7 @@ julia> y, dy, v2d = addVars("y", 2, v2d)
 function addVars(name::AbstractString, v2d::Bijection{Num, Num})
 	var_ex = Symbol(name)
 	diffop_ex = Symbol("d", var_ex)
-	var, diffop = @variables $var_ex, $diffop_ex
+	var, diffop = @variables $var_ex::Rational, $diffop_ex::Rational
 	v2d[var] = diffop
 	return var, diffop, v2d
 end
