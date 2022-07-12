@@ -9,6 +9,20 @@ end
 
 using PfaffianSystems: makeTestVarsAndIdeal
 
+using Symbolics: @variables
+@testset "AsirWrapper.jl" begin
+    x, dx, var2do = genVars("x", 3)
+    @variables y[1:2]::Rational
+    os = OrderedSet((x[2], x[1]))
+
+    @test !isnothing(isAsirAvailable())
+    @test vec2str(x) == "x1,x2,x3"
+    @test vec2str(y) == "y1,y2"
+    @test vec2str(os) == "x2,x1"
+    @test isequal(asir_derivative(x[1]*sin(x[2]), x[2]), x[1]*cos(x[2]))
+    @test isequal(asir_derivative([x[1]*exp(x[2]), x[3]*x[2]^2], x[2]), [x[1]*exp(x[2]), 2*x[3]*x[2]])
+end
+
 @testset "DiffOps.jl" begin
     x, dx, var2do = genVars("x", 3)
     @test length(x) == length(dx) == length(var2do) == 3
@@ -42,18 +56,6 @@ end
     # @test_nowarn integrationIdeal(I, x[1:1])
     # @test integrationIdeal(I, x[3:3]) |> isnothing
     @test_nowarn restrictionIdeal(I, x[1:1])
-end
-
-using Symbolics: @variables
-@testset "AsirWrapper.jl" begin
-    x, dx, var2do = genVars("x", 3)
-    @variables y[1:2]
-    os = OrderedSet((x[2], x[1]))
-
-    @test !isnothing(isAsirAvailable())
-    @test vec2str(x) == "x1,x2,x3"
-    @test vec2str(y) == "y1,y2"
-    @test vec2str(os) == "x2,x1"
 end
 
 @testset "PfaffSys.jl" begin

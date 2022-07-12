@@ -61,6 +61,7 @@ function asir_derivative(sym::Num, var::Num)
 	asir_res = asir_cmd |> runAsir |> parseAsir
 	return evalAsir(asir_res[1], vars_list)
 end
+asir_derivative(syms::AbstractArray{Num}, var::Num) = asir_derivative.(syms, var)
 
 """
 	apply_dmon(DOmon::AbstractTerm, F::Num, p2s::Bijection, v2d::Bijection)
