@@ -5,7 +5,10 @@ import Base: sort
 # Write your package code here.
 using Bijections
 using Symbolics
-using Symbolics: derivative, value, get_variables, scalarize
+# --- derivative of Symbolics does not keep coefficient type ---
+# using Symbolics: derivative, value, get_variables, scalarize
+# --------------------------------------------------------------
+using Symbolics: value, get_variables, scalarize
 using SymbolicUtils: PolyForm, BasicSymbolic
 using DynamicPolynomials
 using DynamicPolynomials: variables, exponents, coefficient, term
@@ -22,6 +25,9 @@ end
 sort(v::Vector{Num}) = v[sortperm(string.(v))]
 export sort
 
+include("AsirWrapper.jl")
+export isAsirAvailable, vec2str, asir_derivative
+
 include("DiffOps.jl")
 export genVars, addVars, apply_do
 
@@ -29,9 +35,6 @@ export OrderedSet
 include("DIdeals.jl")
 export DIdeal, stdmon!, isZeroDimensional, makeTestVarsAndIdeal
 export eliminationIdeal, intersectionIdeal, integrationIdeal, restrictionIdeal
-
-include("AsirWrapper.jl")
-export isAsirAvailable, vec2str
 
 include("PfaffSys.jl")
 export PfaffianSystem, buildFuncA, integrate, applyStdMons

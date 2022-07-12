@@ -52,6 +52,16 @@ julia> y, dy, v2d = addVars("y", 2, v2d)
 genVars(name::AbstractString) = addVars(name, Bijection{Num, Num}())
 genVars(name::AbstractString, n::Integer) = addVars(name, n, Bijection{Num, Num}())
 
+function asir_derivative(sym::Num, var::Num)
+	vars_list = get_variables(sym) .|> Num
+	asir_cmd = "diff($sym, $var);"
+	# """
+	# diff($sym, $var);
+	# """
+	asir_res = asir_cmd |> runAsir |> parseAsir
+	return evalAsir(asir_res[1], vars_list)
+end
+
 """
 	apply_dmon(DOmon::AbstractTerm, F::Num, p2s::Bijection, v2d::Bijection)
 
@@ -69,7 +79,7 @@ function apply_doterm(DOterm::AbstractTerm, F::Num, p2s::Bijection, v2d::Bijecti
 	for (diffop, e) in zip(diffops, exps)
 		if haskey(d2v, diffop)
 			for k = 1:e
-				retF = derivative(retF, d2v[diffop])
+				retF = asir_derivative(retF, d2v[diffop])
 			end
 		else
 			coef = diffop^e*coef
