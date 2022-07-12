@@ -11,4 +11,7 @@ Juia package for computing Pfaffian systems associated with holonomic D-modules.
 This repository is under development. 
 
 ## Requirement
-* Risa/Asir (> 20210326) on Ubuntu
+* Risa/Asir[[1]](#references) (> 20210326) on Ubuntu
+
+## References
+M. Noro, N. Takayama, H. Nakayama, K. Nishiyama, and K. Ohara, "Risa/Asir: A computer algebra system, " http://www.math.kobe-u.ac.jp/Asir/asir.html. 
