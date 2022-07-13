@@ -21,6 +21,8 @@ using Symbolics: @variables
     @test vec2str(os) == "x2,x1"
     @test isequal(asir_derivative(x[1]*sin(x[2]), x[2]), x[1]*cos(x[2]))
     @test isequal(asir_derivative([x[1]*exp(x[2]), x[3]*x[2]^2], x[2]), [x[1]*exp(x[2]), 2*x[3]*x[2]])
+    @test isequal(asir_reduce((x[1]^2 - x[2]^2)/(x[1] + x[2])), x[1] - x[2])
+    @test isequal(asir_reduce([(x[1]^2 - x[2]^2)/(x[1] + x[2]), (sin(x[1])*x[2] + x[2]^2)/x[2]]), [x[1] - x[2], sin(x[1]) + x[2]])
 end
 
 @testset "DiffOps.jl" begin

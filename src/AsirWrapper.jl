@@ -118,10 +118,69 @@ function asir_derivative(sym::Num, var::Num)
 	return evalAsir(asir_res[1], vars_list)
 end
 asir_derivative(syms::AbstractArray{Num}, var::Num) = asir_derivative.(syms, var)
+function asir_derivative(syms::AbstractMatrix{Num}, var::Num)
+	vars_mat = get_variables.(syms)
+	n, m = size(syms)
+	retMat = Matrix{Num}(undef, n, m)
+	redIndcs = Vector(undef, 0)
+	sizehint!(redIndcs, n*m)
+
+	asir_cmd = ""
+	for i = 1:n
+		for j = 1:m
+			if isempty(vars_mat[i, j])
+				retMat[i, j] = Num(0)
+			else
+				push!(redIndcs, (i, j))
+				asir_cmd *= "diff($(syms[i, j]), $var);\n"
+			end
+		end
+	end
+	asir_res = asir_cmd |> runAsir |> parseAsir
+
+	(length(asir_res) != length(redIndcs)+1) && return nothing
+
+	for (idx, (i, j)) in enumerate(redIndcs)
+		retMat[i, j] = evalAsir(asir_res[idx], vars_mat[i, j] .|> Num)
+	end
+	return retMat
+end
 
 function asir_reduce(sym::Num)
 	vars_list = get_variables(sym) .|> Num
 	asir_cmd = "red($sym);"
 	asir_res = asir_cmd |> runAsir |> parseAsir
 	return evalAsir(asir_res[1], vars_list)
+end
+asir_reduce(syms::AbstractVector{Num}) = asir_reduce(syms[:, :])[:]
+function asir_reduce(syms::AbstractMatrix{Num})
+	# vars_list = get_variables.(syms[:]) .|> Set |> (s->union(s...)) |> collect
+	vars_mat = get_variables.(syms)
+	n, m = size(syms)
+	retMat = Matrix{Num}(undef, n, m)
+	redIndcs = Vector(undef, 0)
+	sizehint!(redIndcs, n*m)
+
+	asir_cmd = ""
+	for i = 1:n
+		for j = 1:m
+			if isempty(vars_mat[i, j])
+				retMat[i, j] = syms[i, j]
+			else
+				push!(redIndcs, (i, j))
+				asir_cmd *= "red($(syms[i, j]));\n"
+			end
+		end
+	end
+	asir_res = asir_cmd |> runAsir |> parseAsir
+
+	(length(asir_res) != length(redIndcs)+1) && return nothing
+
+	for (idx, (i, j)) in enumerate(redIndcs)
+		retMat[i, j] = evalAsir(asir_res[idx], vars_mat[i, j] .|> Num)
+	end
+	return retMat
+	# for i = 1:n
+	# 	retMatTrans[:, i] = evalAsir(asir_res[i], vars_list)
+	# end
 end
