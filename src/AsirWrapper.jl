@@ -107,3 +107,21 @@ function evalAsir(asir_res::AbstractString, vars_list::Vector{Num})
 	# return Base.invokelatest(asir_tmpFunc, vars_list...)
 	return (@invokelatest asir_tmpFunc(vars_list...)) .|> Num
 end
+
+function asir_derivative(sym::Num, var::Num)
+	vars_list = get_variables(sym) .|> Num
+	asir_cmd = "diff($sym, $var);"
+	# """
+	# diff($sym, $var);
+	# """
+	asir_res = asir_cmd |> runAsir |> parseAsir
+	return evalAsir(asir_res[1], vars_list)
+end
+asir_derivative(syms::AbstractArray{Num}, var::Num) = asir_derivative.(syms, var)
+
+function asir_reduce(sym::Num)
+	vars_list = get_variables(sym) .|> Num
+	asir_cmd = "red($sym);"
+	asir_res = asir_cmd |> runAsir |> parseAsir
+	return evalAsir(asir_res[1], vars_list)
+end

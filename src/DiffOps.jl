@@ -52,17 +52,6 @@ julia> y, dy, v2d = addVars("y", 2, v2d)
 genVars(name::AbstractString) = addVars(name, Bijection{Num, Num}())
 genVars(name::AbstractString, n::Integer) = addVars(name, n, Bijection{Num, Num}())
 
-function asir_derivative(sym::Num, var::Num)
-	vars_list = get_variables(sym) .|> Num
-	asir_cmd = "diff($sym, $var);"
-	# """
-	# diff($sym, $var);
-	# """
-	asir_res = asir_cmd |> runAsir |> parseAsir
-	return evalAsir(asir_res[1], vars_list)
-end
-asir_derivative(syms::AbstractArray{Num}, var::Num) = asir_derivative.(syms, var)
-
 """
 	apply_dmon(DOmon::AbstractTerm, F::Num, p2s::Bijection, v2d::Bijection)
 
