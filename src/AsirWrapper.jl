@@ -1,17 +1,17 @@
 # --------------------- Utilities ---------------------
-function removeSqBra(eq::String)
+function removeSqBra(eq::AbstractString)
 	return replace(eq, r"[\[, \]]"=>"")
 end
 
-function add_ast(eq::String)
+function add_ast(eq::AbstractString)
 	return replace(eq, r"([0-9]+)([\(a-zA-Z])"=>s"\1*\2")
 end
 
-function addSqBra(eq::String)
+function addSqBra(eq::AbstractString)
 	return replace(eq, r"([a-zA-Z]+)([0-9]+)"=>s"\1[\2]")
 end
 
-function slash2Dslash(eq::String)
+function slash2Dslash(eq::AbstractString)
 	return replace(eq, r"([0-9a-zA-Z\)])\/([0-9a-zA-Z\(])"=>s"\1//\2")
 end
 
@@ -65,7 +65,7 @@ end
 
 Run `commands` on Asir. The raw response of Asir is returned as a string. 
 """
-function runAsir(commands::AbstractString)
+function runAsir(commands::AbstractString; errMsg=false)
 	commands = replace(commands, r"[\n\t]"=>"") |> add_ast
 	# commands = replace(commands, r"([0-9]+)([a-zA-Z])"=>s"\1*\2")
 	tmpFile, tmpIO = mktemp()
@@ -85,6 +85,9 @@ function runAsir(commands::AbstractString)
 
 	# redirect stderror message to temporary file as it makes tests fail
 	asirout = read(pipeline(`asir -quiet -f $tmpFile`, stderr=tmpErrFile), String)
+	if errMsg
+		@info open(tmpErrFile, "r") do f read(f, String) end
+	end
 	# @info open(tmpErrFile, "r") do f read(f, String) end
 	return asirout
 end
@@ -95,12 +98,12 @@ end
 
 Add square brackets and separete the response into lines. 
 """
-function parseAsir(asir_res::String)
+function parseAsir(asir_res::AbstractString)
 	return asir_res |> (s->split(s, "\n"))
 end
 
 function evalAsir(asir_res::AbstractString, vars_list::Vector{Num})
-	eval(Meta.parse("asir_tmpFunc($(vec2str(vars_list))) = $(asir_res)"))
+	eval(Meta.parse("asir_tmpFunc($(vec2str(vars_list))) = $(asir_res |> slash2Dslash)"))
 	# return Base.invokelatest(asir_tmpFunc, vars_list...)
 	return (@invokelatest asir_tmpFunc(vars_list...)) .|> Num
 end
