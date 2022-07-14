@@ -15,6 +15,10 @@ function slash2Dslash(eq::AbstractString)
 	return replace(eq, r"([0-9a-zA-Z\)])\/([0-9a-zA-Z\(])"=>s"\1//\2")
 end
 
+function Dslash2slash(eq::AbstractString)
+	return replace(eq, r"([0-9a-zA-Z\)])\/\/([0-9a-zA-Z\(])"=>s"\1/\2")
+end
+
 
 """
 	vec2str(v::Vector{Num}; delim=",")
@@ -66,8 +70,11 @@ end
 Run `commands` on Asir. The raw response of Asir is returned as a string. 
 """
 function runAsir(commands::AbstractString; errMsg=false)
-	commands = replace(commands, r"[\n\t]"=>"") |> add_ast
+	commands = replace(commands, r"[\n\t]"=>"") |> add_ast |> Dslash2slash
 	# commands = replace(commands, r"([0-9]+)([a-zA-Z])"=>s"\1*\2")
+	if errMsg
+		@info commands
+	end
 	tmpFile, tmpIO = mktemp()
 	tmpErrFile, tmpErrIO = mktemp()
 	# tmpErrFile, tmpErrIO = mktemp()
@@ -99,26 +106,27 @@ end
 Add square brackets and separete the response into lines. 
 """
 function parseAsir(asir_res::AbstractString)
-	return asir_res |> (s->split(s, "\n"))
+	return asir_res |> (s->split(s, "\n")) .|> slash2Dslash
 end
 
 function evalAsir(asir_res::AbstractString, vars_list::Vector{Num})
-	eval(Meta.parse("asir_tmpFunc($(vec2str(vars_list))) = $(asir_res |> slash2Dslash)"))
+	eval(Meta.parse("asir_tmpFunc($(vec2str(vars_list))) = $(asir_res)"))
 	# return Base.invokelatest(asir_tmpFunc, vars_list...)
 	return (@invokelatest asir_tmpFunc(vars_list...)) .|> Num
 end
 
-function asir_derivative(sym::Num, var::Num)
+function asir_derivative(sym::Num, var::Num; errMsg=false)
 	vars_list = get_variables(sym) .|> Num
 	asir_cmd = "diff($sym, $var);"
 	# """
 	# diff($sym, $var);
 	# """
-	asir_res = asir_cmd |> runAsir |> parseAsir
+	asir_res = runAsir(asir_cmd; errMsg=errMsg) |> parseAsir
 	return evalAsir(asir_res[1], vars_list)
 end
-asir_derivative(syms::AbstractArray{Num}, var::Num) = asir_derivative.(syms, var)
-function asir_derivative(syms::AbstractMatrix{Num}, var::Num)
+# asir_derivative(syms::AbstractArray{Num}, var::Num; errMsg=false) = asir_derivative.(syms, var; errMsg=errMsg)
+asir_derivative(syms::AbstractVector{Num}, var::Num; errMsg=false) = asir_derivative(syms[:, :], var; errMsg=errMsg)[:]
+function asir_derivative(syms::AbstractMatrix{Num}, var::Num; errMsg=false)
 	vars_mat = get_variables.(syms)
 	n, m = size(syms)
 	retMat = Matrix{Num}(undef, n, m)
@@ -136,7 +144,7 @@ function asir_derivative(syms::AbstractMatrix{Num}, var::Num)
 			end
 		end
 	end
-	asir_res = asir_cmd |> runAsir |> parseAsir
+	asir_res = runAsir(asir_cmd; errMsg=errMsg) |> parseAsir
 
 	(length(asir_res) != length(redIndcs)+1) && return nothing
 
@@ -146,14 +154,14 @@ function asir_derivative(syms::AbstractMatrix{Num}, var::Num)
 	return retMat
 end
 
-function asir_reduce(sym::Num)
+function asir_reduce(sym::Num; errMsg=false)
 	vars_list = get_variables(sym) .|> Num
 	asir_cmd = "red($sym);"
-	asir_res = asir_cmd |> runAsir |> parseAsir
+	asir_res = runAsir(asir_cmd; errMsg=errMsg) |> parseAsir
 	return evalAsir(asir_res[1], vars_list)
 end
-asir_reduce(syms::AbstractVector{Num}) = asir_reduce(syms[:, :])[:]
-function asir_reduce(syms::AbstractMatrix{Num})
+asir_reduce(syms::AbstractVector{Num}; errMsg=false) = asir_reduce(syms[:, :]; errMsg=errMsg)[:]
+function asir_reduce(syms::AbstractMatrix{Num}; errMsg=false)
 	# vars_list = get_variables.(syms[:]) .|> Set |> (s->union(s...)) |> collect
 	vars_mat = get_variables.(syms)
 	n, m = size(syms)
@@ -172,7 +180,7 @@ function asir_reduce(syms::AbstractMatrix{Num})
 			end
 		end
 	end
-	asir_res = asir_cmd |> runAsir |> parseAsir
+	asir_res = runAsir(asir_cmd; errMsg=errMsg) |> parseAsir
 
 	(length(asir_res) != length(redIndcs)+1) && return nothing
 
