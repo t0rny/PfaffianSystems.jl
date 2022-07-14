@@ -9,7 +9,7 @@ using Symbolics
 # using Symbolics: derivative, value, get_variables, scalarize
 # --------------------------------------------------------------
 using Symbolics: value, get_variables, scalarize
-using SymbolicUtils: PolyForm, BasicSymbolic
+using SymbolicUtils: PolyForm, BasicSymbolic, isdiv
 using DynamicPolynomials
 using DynamicPolynomials: variables, exponents, coefficient, term
 using DifferentialEquations: solve, ODEProblem

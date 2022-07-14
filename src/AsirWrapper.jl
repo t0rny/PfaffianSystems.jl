@@ -154,11 +154,13 @@ function asir_derivative(syms::AbstractMatrix{Num}, var::Num; errMsg=false)
 	return retMat
 end
 
+rm_den(s::Rational) = s.den == 1 ? s.num : s
+rm_den(s) = (isdiv(s) && s.den === 1) ? s.num : s
 function asir_reduce(sym::Num; errMsg=false)
 	vars_list = get_variables(sym) .|> Num
 	asir_cmd = "red($sym);"
 	asir_res = runAsir(asir_cmd; errMsg=errMsg) |> parseAsir
-	return evalAsir(asir_res[1], vars_list)
+	return evalAsir(asir_res[1], vars_list) |> rm_den
 end
 asir_reduce(syms::AbstractVector{Num}; errMsg=false) = asir_reduce(syms[:, :]; errMsg=errMsg)[:]
 function asir_reduce(syms::AbstractMatrix{Num}; errMsg=false)
@@ -187,7 +189,7 @@ function asir_reduce(syms::AbstractMatrix{Num}; errMsg=false)
 	for (idx, (i, j)) in enumerate(redIndcs)
 		retMat[i, j] = evalAsir(asir_res[idx], vars_mat[i, j] .|> Num)
 	end
-	return retMat
+	return retMat .|> rm_den
 	# for i = 1:n
 	# 	retMatTrans[:, i] = evalAsir(asir_res[i], vars_list)
 	# end
