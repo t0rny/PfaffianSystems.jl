@@ -33,7 +33,7 @@ export genVars, addVars, apply_do
 
 export OrderedSet
 include("DIdeals.jl")
-export DIdeal, stdmon!, isZeroDimensional, makeTestVarsAndIdeal
+export DIdeal, stdmon!, isZeroDimensional, makeTestVarsAndIdeal, apply_ideal
 export eliminationIdeal, intersectionIdeal, integrationIdeal, restrictionIdeal
 
 include("PfaffSys.jl")

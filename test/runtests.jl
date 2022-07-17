@@ -47,6 +47,7 @@ end
 
 @testset "DIdeals.jl" begin
     x, dx, var2do, I = @test_nowarn makeTestVarsAndIdeal()
+    b = exp(-x[1]^2)*sin(x[2])*x[3]
     y, dy, var2do = addVars("y", 2, var2do)
     J = DIdeal([dx[1]^2 + 1, x[2]*dy[2] - 2], var2do)
     @test isequal(stdmon!(I, OrderedSet(x)), [dx[2], 1])
@@ -60,6 +61,7 @@ end
     # @test_nowarn integrationIdeal(I, x[1:1])
     # @test integrationIdeal(I, x[3:3]) |> isnothing
     @test_nowarn restrictionIdeal(I, x[1:1])
+    @test isequal(apply_ideal(I, b), [0, 0, 0])
 end
 
 @testset "PfaffSys.jl" begin
