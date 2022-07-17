@@ -194,3 +194,22 @@ function asir_reduce(syms::AbstractMatrix{Num}; errMsg=false)
 	# 	retMatTrans[:, i] = evalAsir(asir_res[i], vars_list)
 	# end
 end
+
+function asir_fctr(sym::Num; errMsg=false)
+	vars_list = get_variables(sym) .|> Num
+	asir_cmd = 
+	"""
+	F = fctr($sym)\$
+	for (I=0; I<length(F); I++){
+		print(F[I]);
+	}
+	"""
+	# "fctr($sym)\$"
+	asir_res = runAsir(asir_cmd; errMsg=errMsg) |> parseAsir
+	filter!(s->!isempty(s), asir_res) 
+
+	map(asir_res) do res
+		evalAsir(res, vars_list) |> (s->s[1]=>s[2])
+	end
+	# return evalAsir(asir_res[1], vars_list) |> rm_den
+end

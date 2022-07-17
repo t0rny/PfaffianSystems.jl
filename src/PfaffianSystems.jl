@@ -26,7 +26,7 @@ sort(v::Vector{Num}) = v[sortperm(string.(v))]
 export sort
 
 include("AsirWrapper.jl")
-export isAsirAvailable, vec2str, asir_derivative, asir_reduce
+export isAsirAvailable, vec2str, asir_derivative, asir_reduce, asir_fctr
 
 include("DiffOps.jl")
 export genVars, addVars, apply_do
