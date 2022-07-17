@@ -9,7 +9,7 @@ using Symbolics
 # using Symbolics: derivative, value, get_variables, scalarize
 # --------------------------------------------------------------
 using Symbolics: value, get_variables, scalarize
-using SymbolicUtils: PolyForm, BasicSymbolic, isdiv
+using SymbolicUtils: PolyForm, BasicSymbolic, isdiv, unpolyize
 using DynamicPolynomials
 using DynamicPolynomials: variables, exponents, coefficient, term
 using DifferentialEquations: solve, ODEProblem
@@ -37,6 +37,6 @@ export DIdeal, stdmon!, isZeroDimensional, makeTestVarsAndIdeal
 export eliminationIdeal, intersectionIdeal, integrationIdeal, restrictionIdeal
 
 include("PfaffSys.jl")
-export PfaffianSystem, buildFuncA, integrate, applyStdMons
+export PfaffianSystem, buildFuncA, integrate, applyStdMons, denomLCM
 
 end

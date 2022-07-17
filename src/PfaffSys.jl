@@ -54,6 +54,19 @@ function PfaffianSystem(I::DIdeal)
 	return _computePfaffSys(I, I.v2d.domain |> collect |> sort |> OrderedSet)
 end
 
+function denomLCM(pf::PfaffianSystem)
+	tmpD = Num(1)
+	for v in pf.v2d.domain
+		map(pf.A[v] .|> value) do r
+			if isdiv(r)
+				tmpD *= r.den
+			end
+		end
+	end
+	DenomFctrs = asir_fctr(tmpD)
+	reduce(*, [fctr.first for fctr in DenomFctrs])
+end
+
 function applyStdMons(pf::PfaffianSystem, F::Num)
 	return map(pf.std_mons) do dmon
 		apply_do(dmon, F, pf.v2d)
