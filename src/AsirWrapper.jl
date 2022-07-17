@@ -1,3 +1,4 @@
+const ASIR_DEBUG = false
 # --------------------- Utilities ---------------------
 function removeSqBra(eq::AbstractString)
 	return replace(eq, r"[\[, \]]"=>"")
@@ -69,7 +70,7 @@ end
 
 Run `commands` on Asir. The raw response of Asir is returned as a string. 
 """
-function runAsir(commands::AbstractString; errMsg=false)
+function runAsir(commands::AbstractString; errMsg=ASIR_DEBUG)
 	commands = replace(commands, r"[\n\t]"=>"") |> add_ast |> Dslash2slash
 	# commands = replace(commands, r"([0-9]+)([a-zA-Z])"=>s"\1*\2")
 	if errMsg
@@ -110,12 +111,17 @@ function parseAsir(asir_res::AbstractString)
 end
 
 function evalAsir(asir_res::AbstractString, vars_list::Vector{Num})
-	eval(Meta.parse("asir_tmpFunc($(vec2str(vars_list))) = $(asir_res)"))
+	tmpExpr = Meta.parse("asir_tmpFunc($(vec2str(vars_list))) = $(asir_res)")
+	try
+		eval(tmpExpr)
+	catch
+		@assert false "Error: somthing wrong in evaluating $(asir_res)"
+	end
 	# return Base.invokelatest(asir_tmpFunc, vars_list...)
 	return (@invokelatest asir_tmpFunc(vars_list...)) .|> Num
 end
 
-function asir_derivative(sym::Num, var::Num; errMsg=false)
+function asir_derivative(sym::Num, var::Num; errMsg=ASIR_DEBUG)
 	vars_list = get_variables(sym) .|> Num
 	asir_cmd = "diff($sym, $var);"
 	# """
@@ -125,8 +131,8 @@ function asir_derivative(sym::Num, var::Num; errMsg=false)
 	return evalAsir(asir_res[1], vars_list)
 end
 # asir_derivative(syms::AbstractArray{Num}, var::Num; errMsg=false) = asir_derivative.(syms, var; errMsg=errMsg)
-asir_derivative(syms::AbstractVector{Num}, var::Num; errMsg=false) = asir_derivative(syms[:, :], var; errMsg=errMsg)[:]
-function asir_derivative(syms::AbstractMatrix{Num}, var::Num; errMsg=false)
+asir_derivative(syms::AbstractVector{Num}, var::Num; errMsg=ASIR_DEBUG) = asir_derivative(syms[:, :], var; errMsg=errMsg)[:]
+function asir_derivative(syms::AbstractMatrix{Num}, var::Num; errMsg=ASIR_DEBUG)
 	vars_mat = get_variables.(syms)
 	n, m = size(syms)
 	retMat = Matrix{Num}(undef, n, m)
@@ -156,14 +162,14 @@ end
 
 rm_den(s::Rational) = s.den == 1 ? s.num : s
 rm_den(s) = (isdiv(s) && s.den === 1) ? s.num : s
-function asir_reduce(sym::Num; errMsg=false)
+function asir_reduce(sym::Num; errMsg=ASIR_DEBUG)
 	vars_list = get_variables(sym) .|> Num
 	asir_cmd = "red($sym);"
 	asir_res = runAsir(asir_cmd; errMsg=errMsg) |> parseAsir
 	return evalAsir(asir_res[1], vars_list) |> rm_den
 end
-asir_reduce(syms::AbstractVector{Num}; errMsg=false) = asir_reduce(syms[:, :]; errMsg=errMsg)[:]
-function asir_reduce(syms::AbstractMatrix{Num}; errMsg=false)
+asir_reduce(syms::AbstractVector{Num}; errMsg=ASIR_DEBUG) = asir_reduce(syms[:, :]; errMsg=errMsg)[:]
+function asir_reduce(syms::AbstractMatrix{Num}; errMsg=ASIR_DEBUG)
 	# vars_list = get_variables.(syms[:]) .|> Set |> (s->union(s...)) |> collect
 	vars_mat = get_variables.(syms)
 	n, m = size(syms)
@@ -195,7 +201,7 @@ function asir_reduce(syms::AbstractMatrix{Num}; errMsg=false)
 	# end
 end
 
-function asir_fctr(sym::Num; errMsg=false)
+function asir_fctr(sym::Num; errMsg=ASIR_DEBUG)
 	vars_list = get_variables(sym) .|> Num
 	asir_cmd = 
 	"""
