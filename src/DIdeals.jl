@@ -33,9 +33,9 @@ function makeTestVarsAndIdeal()
 	return x, dx, v2d, DIdeal([dx[1] + 2*x[1], dx[2]^2 + 1, x[3]*dx[3] - 1], v2d)
 end
 
-function apply_ideal(I::DIdeal, F::Num)
+function apply_ideal(I::DIdeal, F::Num; use_asir=false)
 	map(I.gens) do DO
-		apply_do(DO, F, I.v2d)
+		apply_do(DO, F, I.v2d; use_asir=use_asir)
 	end
 end
 

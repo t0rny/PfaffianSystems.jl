@@ -43,6 +43,12 @@ end
     @test isequal(apply_do(x[2], x[1], var2do), x[1]*x[2])
     @test isequal(apply_do(2.0, x[1], var2do), 2.0*x[1])
     @test isequal(apply_do(3, x[1], var2do), 3*x[1])
+
+    @test apply_do(dx[1], x[1], var2do; use_asir=true) == 1
+    @test apply_do(dx[2]^2 + 1, sin(x[2]), var2do; use_asir=true) == 0
+    @test isequal(apply_do(x[2], x[1], var2do; use_asir=true), x[1]*x[2])
+    @test isequal(apply_do(2.0, x[1], var2do; use_asir=true), 2.0*x[1])
+    @test isequal(apply_do(3, x[1], var2do; use_asir=true), 3*x[1])
 end
 
 @testset "DIdeals.jl" begin

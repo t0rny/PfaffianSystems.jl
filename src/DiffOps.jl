@@ -58,7 +58,7 @@ genVars(name::AbstractString, n::Integer) = addVars(name, n, Bijection{Num, Num}
 Apply a term of differential operator `DOterm` to an expression `F`. 
 The bijection `p2s` relates a MulltivariatePolunomials expression to a SymbolicUtils one, and `d2v` does a differential operator to its corresponding variable. 
 """
-function apply_doterm(DOterm::AbstractTerm, F::Num, p2s::Bijection, v2d::Bijection{Num, Num})
+function apply_doterm(DOterm::AbstractTerm, F::Num, p2s::Bijection, v2d::Bijection{Num, Num}; use_asir=false)
 	d2v = inv(v2d)
 	coef = coefficient(DOterm)
 	mon = monomial(DOterm)
@@ -69,7 +69,7 @@ function apply_doterm(DOterm::AbstractTerm, F::Num, p2s::Bijection, v2d::Bijecti
 	for (diffop, e) in zip(diffops, exps)
 		if haskey(d2v, diffop)
 			for k = 1:e
-				retF = asir_derivative(retF, d2v[diffop])
+				retF = use_asir ? asir_derivative(retF, d2v[diffop]) : derivative(retF, d2v[diffop])
 			end
 		else
 			coef = diffop^e*coef
@@ -77,23 +77,23 @@ function apply_doterm(DOterm::AbstractTerm, F::Num, p2s::Bijection, v2d::Bijecti
 	end
 	return coef*retF
 end
-function apply_doterm(DOterm::PolyForm, F::Num, v2d::Bijection{Num, Num})
+function apply_doterm(DOterm::PolyForm, F::Num, v2d::Bijection{Num, Num}; use_asir=false)
 	@assert length(terms(DOterm.p)) == 1 "Error: Differnetial operator has more than 1 term"
-	apply_doterm(terms(DOterm.p)[1], F, DOterm.pvar2sym, v2d)
+	apply_doterm(terms(DOterm.p)[1], F, DOterm.pvar2sym, v2d; use_asir=use_asir)
 end
-apply_doterm(DOterm::Num, F::Num, v2d::Bijection{Num, Num}) = apply_doterm(DOterm |> value |> PolyForm, F, v2d)
+apply_doterm(DOterm::Num, F::Num, v2d::Bijection{Num, Num}; use_asir=false) = apply_doterm(DOterm |> value |> PolyForm, F, v2d; use_asir=use_asir)
 
 
-function apply_do(DiffOp::BasicSymbolic, F::Num, v2d::Bijection{Num, Num})
+function apply_do(DiffOp::BasicSymbolic, F::Num, v2d::Bijection{Num, Num}; use_asir=false)
 	dp = PolyForm(DiffOp)
 	p2s = dp.pvar2sym
 	retF::Num = 0
 	for DOterm in terms(dp.p)
-		retF = retF + apply_doterm(DOterm, F, p2s, v2d)
+		retF = retF + apply_doterm(DOterm, F, p2s, v2d; use_asir=use_asir)
 	end
 	return retF
 end
-function apply_do(DiffOp::Union{Integer, AbstractFloat}, F::Num, v2d::Bijection{Num, Num})
+function apply_do(DiffOp::Union{Integer, AbstractFloat}, F::Num, v2d::Bijection{Num, Num}; use_asir=false)
 	return DiffOp*F
 end
-apply_do(DiffOp::Num, F::Num, v2d::Bijection) = apply_do(DiffOp |> value, F, v2d)
+apply_do(DiffOp::Num, F::Num, v2d::Bijection; use_asir=false) = apply_do(DiffOp |> value, F, v2d; use_asir=use_asir)

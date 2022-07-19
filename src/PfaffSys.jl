@@ -67,9 +67,9 @@ function denomLCM(pf::PfaffianSystem)
 	reduce(*, [fctr.first for fctr in DenomFctrs])
 end
 
-function applyStdMons(pf::PfaffianSystem, F::Num)
+function applyStdMons(pf::PfaffianSystem, F::Num; use_asir=false)
 	return map(pf.std_mons) do dmon
-		apply_do(dmon, F, pf.v2d)
+		apply_do(dmon, F, pf.v2d; use_asir=use_asir)
 	end
 end
 
