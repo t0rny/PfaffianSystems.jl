@@ -75,7 +75,7 @@ end
 
 function buildFuncA(pf::PfaffianSystem)
 	vars = pf.v2d.domain |> collect |> sort
-	[build_function(pf.A[v], vars)[1] |> eval for v in vars]
+	return [build_function(pf.A[v], vars)[1] |> eval for v in vars], vars
 end
 
 # private
@@ -92,6 +92,30 @@ function _integrate_core(funcA, init_vecs::AbstractMatrix{Float64}, z_init::Abst
 	return sol.u
 end
 
+function integrate(pf::PfaffianSystem, init_vecs::AbstractMatrix{<:Real}, z_init::Dict{Num, <:Real}, z_term::Dict{Num, <:Real})
+	d = length(pf.std_mons)
+	@assert size(init_vecs)[1] == d "Error: invalid length of initial vectors"
+	# @assert length(pf.v2d.domain) == length(z_init) == length(z_term) "Error: invalid lengths of initial and terminal z vectors"
+	@assert issetequal(pf.v2d.domain, keys(z_init)) "Error: invalid variables in initial z"
+	@assert issetequal(pf.v2d.domain, keys(z_term)) "Error: invalid variables in terminal z"
+
+	exprFuncA, vars = buildFuncA(pf)
+	funcA(s) = map(exprFuncA) do fA
+		@invokelatest fA(s)
+	end
+	zvec_init = substitute(vars, (z_init),) .|> value
+	zvec_term = substitute(vars, (z_term),) .|> value
+
+	sol = _integrate_core(
+		funcA, 
+		convert(Matrix{Float64}, init_vecs), 
+		convert(Vector{Float64}, zvec_init), 
+		convert(Vector{Float64}, zvec_term)
+		)
+	return sol
+end
+
+# deprecated
 function integrate(pf::PfaffianSystem, init_vecs::Matrix{<:Real}, z_init::Vector{<:Real}, z_term::Vector{<:Real})
 	d = length(pf.std_mons)
 	@assert size(init_vecs)[1] == d "Error: invalid length of initial vectors"
@@ -100,7 +124,8 @@ function integrate(pf::PfaffianSystem, init_vecs::Matrix{<:Real}, z_init::Vector
 	# z_traj(s) = ((z_term-z_init)*s + z_init, (z_term-z_init))
 
 	# funcA(s) = map(a->Base.invokelatest(a, s), buildFuncA(pf))
-	funcA(s) = map(buildFuncA(pf)) do fA
+	exprFuncA, vars = buildFuncA(pf)
+	funcA(s) = map(exprFuncA) do fA
 		@invokelatest fA(s)
 	end
 
