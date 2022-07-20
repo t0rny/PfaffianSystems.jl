@@ -24,7 +24,7 @@ function _computePfaffSys(I::DIdeal, ordered_vars::OrderedSet{Num})
 
 	# vars_list = cat(t, vars, dt, diffops; dims=1)
 	vars_list = union(I.v2d.domain, I.v2d.range) |> collect
-	std_mons = evalAsir(asir_res[1], vars_list)
+	std_mons = evalAsir(asir_res[1], vars_list) |> reverse
 
 	asir_res = asir_res[2:end]
 	m = length(std_mons)

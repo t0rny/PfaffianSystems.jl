@@ -80,6 +80,6 @@ end
     @test funcAs[3](x_bar) == [1 0; 0 1]
     @test_nowarn integrate(pf, [1 0; 0 1], [1, 1, 1], [3, 2, 1])
     @test_nowarn integrate(pf, [1 0; 0 1], cat([[cos(0.1*t), sin(0.1*t), 1+0.1*t] for t = 1:10]...; dims=2)) 
-    @test isequal(applyStdMons(pf, cos(x[2])), [-sin(x[2]); cos(x[2])])
+    @test isequal(applyStdMons(pf, cos(x[2])), [cos(x[2]); -sin(x[2])])
     @test isequal(denomLCM(pf), x[3])
 end
