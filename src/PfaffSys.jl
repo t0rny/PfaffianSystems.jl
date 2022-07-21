@@ -120,14 +120,17 @@ function integrate(pf::PfaffianSystem, init_vecs::AbstractMatrix{<:Real}, z_traj
 	# N = size(z_traj)[2]
 	@assert size(init_vecs)[1] == d "Error: invalid length of initial vectors"
 	@assert issetequal(pf.v2d.domain, keys(z_traj)) "Error: invalid variables in trajectory of z"
-	@assert reduce(==, values(z_traj) .|> length) "Error: lengths of series $(values(z_traj) .|> length) are different"
-	N = values(z_traj)[1] |> length
+	# @assert reduce(==, values(z_traj) .|> length) "Error: lengths of series $(values(z_traj) .|> length) are different"
+	@assert (values(z_traj) .|> length) |> (s->all(t->t==s[1], s)) "Error: lengths of series $(values(z_traj) .|> length) are different"
+	N = values(z_traj) |> first |> length
 
 	exprFuncA, vars = buildFuncA(pf)
 	funcA(s) = map(exprFuncA) do fA
 		@invokelatest fA(s)
 	end
-	zvec_traj = hcat([z_traj[v] for v in vars]...)' |> collect 
+
+	vecs = fill(convert(Matrix{Float64}, init_vecs), N) 
+	zvec_traj = convert(Matrix{Float64}, hcat([z_traj[v] for v in vars]...)' |> collect)
 
 	for i = 1:N-1
 		zvec_init = @view zvec_traj[:, i]
