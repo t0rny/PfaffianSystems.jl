@@ -92,7 +92,7 @@ function _integrate_core(funcA, init_vecs::AbstractMatrix{Float64}, z_init::Abst
 	return sol.u
 end
 
-function integrate(pf::PfaffianSystem, init_vecs::AbstractMatrix{<:Real}, z_init::Dict{Num, <:Real}, z_term::Dict{Num, <:Real})
+function integratePf(pf::PfaffianSystem, init_vecs::AbstractMatrix{<:Real}, z_init::Dict{Num, <:Real}, z_term::Dict{Num, <:Real})
 	d = length(pf.std_mons)
 	@assert size(init_vecs)[1] == d "Error: invalid length of initial vectors"
 	# @assert length(pf.v2d.domain) == length(z_init) == length(z_term) "Error: invalid lengths of initial and terminal z vectors"
@@ -115,7 +115,7 @@ function integrate(pf::PfaffianSystem, init_vecs::AbstractMatrix{<:Real}, z_init
 	return sol
 end
 
-function integrate(pf::PfaffianSystem, init_vecs::AbstractMatrix{<:Real}, z_traj::Dict{Num, <:AbstractVector{<:Real}})
+function integratePf(pf::PfaffianSystem, init_vecs::AbstractMatrix{<:Real}, z_traj::Dict{Num, <:AbstractVector{<:Real}})
 	d = length(pf.std_mons)
 	# N = size(z_traj)[2]
 	@assert size(init_vecs)[1] == d "Error: invalid length of initial vectors"
@@ -147,61 +147,61 @@ function integrate(pf::PfaffianSystem, init_vecs::AbstractMatrix{<:Real}, z_traj
 end
 
 # deprecated
-function integrate(pf::PfaffianSystem, init_vecs::Matrix{<:Real}, z_init::Vector{<:Real}, z_term::Vector{<:Real})
-	d = length(pf.std_mons)
-	@assert size(init_vecs)[1] == d "Error: invalid length of initial vectors"
-	@assert length(pf.v2d.domain) == length(z_init) == length(z_term) "Error: invalid lengths of initial and terminal z vectors"
+# function integrate(pf::PfaffianSystem, init_vecs::Matrix{<:Real}, z_init::Vector{<:Real}, z_term::Vector{<:Real})
+# 	d = length(pf.std_mons)
+# 	@assert size(init_vecs)[1] == d "Error: invalid length of initial vectors"
+# 	@assert length(pf.v2d.domain) == length(z_init) == length(z_term) "Error: invalid lengths of initial and terminal z vectors"
 
-	# z_traj(s) = ((z_term-z_init)*s + z_init, (z_term-z_init))
+# 	# z_traj(s) = ((z_term-z_init)*s + z_init, (z_term-z_init))
 
-	# funcA(s) = map(a->Base.invokelatest(a, s), buildFuncA(pf))
-	exprFuncA, vars = buildFuncA(pf)
-	funcA(s) = map(exprFuncA) do fA
-		@invokelatest fA(s)
-	end
+# 	# funcA(s) = map(a->Base.invokelatest(a, s), buildFuncA(pf))
+# 	exprFuncA, vars = buildFuncA(pf)
+# 	funcA(s) = map(exprFuncA) do fA
+# 		@invokelatest fA(s)
+# 	end
 
-	# PfODE = (dq, q, param, s)->begin
-	# 	zs, dzds = (param)(s)
-	# 	dq .= reduce(+, funcA(zs).*dzds)*q
-	# end
+# 	# PfODE = (dq, q, param, s)->begin
+# 	# 	zs, dzds = (param)(s)
+# 	# 	dq .= reduce(+, funcA(zs).*dzds)*q
+# 	# end
 
-	# pf_ode = ODEProblem(PfODE, init_vecs, [0, 1], z_traj)
-	# sol = solve(pf_ode, abstol=1e-6, reltol=1e-6)
-	# return sol
-	sol = _integrate_core(
-		funcA, 
-		convert(Matrix{Float64}, init_vecs), 
-		convert(Vector{Float64}, z_init), 
-		convert(Vector{Float64}, z_term)
-		)
-	return sol
-end
+# 	# pf_ode = ODEProblem(PfODE, init_vecs, [0, 1], z_traj)
+# 	# sol = solve(pf_ode, abstol=1e-6, reltol=1e-6)
+# 	# return sol
+# 	sol = _integrate_core(
+# 		funcA, 
+# 		convert(Matrix{Float64}, init_vecs), 
+# 		convert(Vector{Float64}, z_init), 
+# 		convert(Vector{Float64}, z_term)
+# 		)
+# 	return sol
+# end
 
 # deprecated
-function integrate(pf::PfaffianSystem, init_vecs::Matrix{<:Real}, z_traj::Matrix{<:Real})
-	d = length(pf.std_mons)
-	N = size(z_traj)[2]
-	@assert size(init_vecs)[1] == d "Error: invalid length of initial vectors"
-	@assert length(pf.v2d.domain) == size(z_traj)[1] "Error: invalid lengths of z vectors"
+# function integrate(pf::PfaffianSystem, init_vecs::Matrix{<:Real}, z_traj::Matrix{<:Real})
+# 	d = length(pf.std_mons)
+# 	N = size(z_traj)[2]
+# 	@assert size(init_vecs)[1] == d "Error: invalid length of initial vectors"
+# 	@assert length(pf.v2d.domain) == size(z_traj)[1] "Error: invalid lengths of z vectors"
 
-	vecs = fill(convert(Matrix{Float64}, init_vecs), N) 
-	z_traj = convert(Matrix{Float64}, z_traj)
+# 	vecs = fill(convert(Matrix{Float64}, init_vecs), N) 
+# 	z_traj = convert(Matrix{Float64}, z_traj)
 
-	# funcA(s) = map(a->Base.invokelatest(a, s), buildFuncA(pf))
-	funcA(s) = map(buildFuncA(pf)) do fA
-		@invokelatest fA(s)
-	end
+# 	# funcA(s) = map(a->Base.invokelatest(a, s), buildFuncA(pf))
+# 	funcA(s) = map(buildFuncA(pf)) do fA
+# 		@invokelatest fA(s)
+# 	end
 
-	for i = 1:N-1
-		z_init = @view z_traj[:, i]
-		z_term = @view z_traj[:, i+1]
-		sol = _integrate_core(
-			funcA, 
-			vecs[i], 
-			z_init, 
-			z_term
-			)
-		vecs[i+1] = sol[length(sol)]
-	end
-	return vecs
-end
+# 	for i = 1:N-1
+# 		z_init = @view z_traj[:, i]
+# 		z_term = @view z_traj[:, i+1]
+# 		sol = _integrate_core(
+# 			funcA, 
+# 			vecs[i], 
+# 			z_init, 
+# 			z_term
+# 			)
+# 		vecs[i+1] = sol[length(sol)]
+# 	end
+# 	return vecs
+# end
