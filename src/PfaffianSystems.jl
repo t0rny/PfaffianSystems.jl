@@ -37,6 +37,6 @@ export DIdeal, stdmon!, isZeroDimensional, makeTestVarsAndIdeal, apply_ideal
 export eliminationIdeal, intersectionIdeal, integrationIdeal, restrictionIdeal
 
 include("PfaffSys.jl")
-export PfaffianSystem, buildFuncA, integratePf, applyStdMons, denomLCM
+export PfaffianSystem, get_vars, get_dvars, buildFuncA, integratePf, applyStdMons, denomLCM
 
 end

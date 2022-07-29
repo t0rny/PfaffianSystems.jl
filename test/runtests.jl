@@ -73,6 +73,8 @@ end
 @testset "PfaffSys.jl" begin
     x, dx, var2do, I = makeTestVarsAndIdeal()
     pf = @test_nowarn PfaffianSystem(I)
+    @test isequal(get_vars(pf), x)
+    @test isequal(get_dvars(pf), dx)
     funcAs, vars = @test_nowarn buildFuncA(pf)
     x_bar = [0, 2, 1]
     @test funcAs[1](x_bar) == [0 0; 0 0]

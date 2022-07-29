@@ -54,6 +54,9 @@ function PfaffianSystem(I::DIdeal)
 	return _computePfaffSys(I, I.v2d.domain |> collect |> sort |> OrderedSet)
 end
 
+get_vars(pf::PfaffianSystem) = pf.v2d.domain |> collect |> sort
+get_dvars(pf::PfaffianSystem) = map(get_vars(pf)) do v pf.v2d[v] end
+
 function denomLCM(pf::PfaffianSystem)
 	tmpD = Num(1)
 	for v in pf.v2d.domain
@@ -74,7 +77,8 @@ function applyStdMons(pf::PfaffianSystem, F::Num; use_asir=false)
 end
 
 function buildFuncA(pf::PfaffianSystem)
-	vars = pf.v2d.domain |> collect |> sort
+	# vars = pf.v2d.domain |> collect |> sort
+	vars = get_vars(pf)
 	return [build_function(pf.A[v], vars)[1] |> eval for v in vars], vars
 end
 
