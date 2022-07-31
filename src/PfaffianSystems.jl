@@ -30,7 +30,7 @@ include("AsirWrapper.jl")
 export isAsirAvailable, vec2str, asir_derivative, asir_reduce, asir_fctr
 
 include("DiffOps.jl")
-export genVars, addVars, apply_do
+export genVars, addVars, apply_do, dmul
 
 include("DIdeals.jl")
 export DIdeal, stdmon!, isZeroDimensional, makeTestVarsAndIdeal, apply_ideal

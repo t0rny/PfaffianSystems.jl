@@ -49,6 +49,12 @@ end
     @test isequal(apply_do(x[2], x[1], var2do; use_asir=true), x[1]*x[2])
     @test isequal(apply_do(2.0, x[1], var2do; use_asir=true), 2.0*x[1])
     @test isequal(apply_do(3, x[1], var2do; use_asir=true), 3*x[1])
+
+    @test isequal(dmul(dx[2], 1, var2do), dx[2])
+    @test isequal(dmul(1, x[1], var2do), x[1])
+    @test isequal(dmul(dx[2], x[3]^2, var2do), dx[2]*x[3]^2)
+    @test isequal(dmul(dx[2], x[2]*dx[1], var2do), dx[1] + dx[1]*dx[2]*x[2])
+    @test isequal(dmul(dx[2], (x[2]^2 + 2*x[1])*dx[1], var2do), (x[2]^2 + 2*x[1])*dx[1]*dx[2] + 2*x[2]*dx[1])
 end
 
 @testset "DIdeals.jl" begin

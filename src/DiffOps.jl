@@ -89,11 +89,32 @@ function apply_do(DiffOp::BasicSymbolic, F::Num, v2d::Bijection{Num, Num}; use_a
 	p2s = dp.pvar2sym
 	retF::Num = 0
 	for DOterm in terms(dp.p)
-		retF = retF + apply_doterm(DOterm, F, p2s, v2d; use_asir=use_asir)
+		# retF = retF + apply_doterm(DOterm, F, p2s, v2d; use_asir=use_asir)
+		retF += apply_doterm(DOterm, F, p2s, v2d; use_asir=use_asir)
 	end
 	return retF
 end
 function apply_do(DiffOp::Union{Integer, AbstractFloat}, F::Num, v2d::Bijection{Num, Num}; use_asir=false)
 	return DiffOp*F
 end
-apply_do(DiffOp::Num, F::Num, v2d::Bijection; use_asir=false) = apply_do(DiffOp |> value, F, v2d; use_asir=use_asir)
+apply_do(DiffOp::Num, F::Num, v2d::Bijection{Num, Num}; use_asir=false) = apply_do(DiffOp |> value, F, v2d; use_asir=use_asir)
+
+function dmul(dol::Num, dor::BasicSymbolic, v2d::Bijection{Num, Num}; use_asir=false)
+	dor_pf = PolyForm(dor)
+	p2s = dor_pf.pvar2sym
+	retDO = dor*dol
+	for dor_term in terms(dor_pf.p)
+		# retDO += Num(dor_term)*dol
+		coef = coefficient(dor_term)
+		mon = monomial(dor_term)
+		syms = variables(mon) .|> (s->p2s[s])
+		exps = exponents(mon)
+		varIdx = map(syms) do s s in v2d.domain end
+		var_term = reduce(*, [s^e for (s, e) in zip(syms[varIdx], exps[varIdx])])
+
+		retDO += coef*apply_do(dol, Num(var_term), v2d; use_asir=use_asir)*reduce(*, [Num(s^e) for (s, e) in zip(syms[.!varIdx], exps[.!varIdx])])
+	end
+	return retDO
+end
+dmul(dol::Num, dor::Num, v2d::Bijection{Num, Num}; use_asir=false) = dmul(dol, value(dor), v2d; use_asir=use_asir)
+dmul(dol, dor, v2d::Bijection{Num, Num}; use_asir=false) = dol*dor
