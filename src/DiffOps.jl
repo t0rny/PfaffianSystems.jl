@@ -110,7 +110,7 @@ function dmul(dol::Num, dor::BasicSymbolic, v2d::Bijection{Num, Num}; use_asir=f
 		syms = variables(mon) .|> (s->p2s[s])
 		exps = exponents(mon)
 		varIdx = map(syms) do s s in v2d.domain end
-		var_term = reduce(*, [s^e for (s, e) in zip(syms[varIdx], exps[varIdx])])
+		var_term = reduce(*, [Num(s^e) for (s, e) in zip(syms[varIdx], exps[varIdx])])
 
 		retDO += coef*apply_do(dol, Num(var_term), v2d; use_asir=use_asir)*reduce(*, [Num(s^e) for (s, e) in zip(syms[.!varIdx], exps[.!varIdx])])
 	end
