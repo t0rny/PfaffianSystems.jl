@@ -1,3 +1,13 @@
+
+# PolyDiffOp(a::Vector{T}, x::MonomialVector{false}) = Polynomial{false, Rational{Integer}}(a, x)
+const PolyDiffOp = Polynomial{false, Rational}
+PolyDiffOp(p::Polynomial) = convert(PolyDiffOp, p)
+
+# TOOD: differential operators with coefficients in rational functions should be implemented
+# const RatDiffOp = Polynomial{false, RationalPoly{Polynomial{true, Rational{T}}, Polynomial{true, Rational{T}}}} where T
+# function RatDiffOp(p::Polynomial{C, T}) where {C, T}
+# end
+
 """
 	addVars(name::AbstractString[, n::Integer, v2d::Bijection])
 
@@ -33,6 +43,21 @@ function addVars(name::AbstractString, n::Integer, v2d::Bijection{Num, Num})
 	return vars, diffops, v2d
 end
 
+function addVars2(name::AbstractString, v2d::Bijection{PolyVar{false}, PolyVar{false}})
+# function addVars2(name::AbstractString, v2d::Bijection{Num, Num})
+	@assert !startswith(name, 'd') "variable name \"$name\" must start from letters except for \"d\""
+	@assert !in(name, DP.name.(v2d.domain)) "already exists variable named \"$name\""
+	# var_ex = Symbol(name)
+	# diffop_ex = Symbol('d', var_ex)
+	# var, diffop = @ncpolyvar $(esc($var_ex)) $(esc($diffop_ex))
+	var = PolyVar{false}(name)
+	diffop = PolyVar{false}('d'*name)
+	# var, diffop = @variables $var_ex::Rational, $diffop_ex::Rational
+	# if in(name, DP.name.(v2d.domain))
+	v2d[var] = diffop
+	return var, diffop, v2d
+end
+
 """
 	genVars(name::AbstractString[, n::Integer])
 
@@ -51,6 +76,10 @@ julia> y, dy, v2d = addVars("y", 2, v2d)
 """
 genVars(name::AbstractString) = addVars(name, Bijection{Num, Num}())
 genVars(name::AbstractString, n::Integer) = addVars(name, n, Bijection{Num, Num}())
+
+genVars2(name::AbstractString) = addVars2(name, Bijection{PolyVar{false}, PolyVar{false}}())
+# genVars2(name::AbstractString) = addVars2(name, Bijection{Num, Num}())
+
 
 """
 	apply_dmon(DOmon::AbstractTerm, F::Num, p2s::Bijection, v2d::Bijection)
@@ -98,6 +127,9 @@ function apply_do(DiffOp::Union{Integer, AbstractFloat}, F::Num, v2d::Bijection{
 	return DiffOp*F
 end
 apply_do(DiffOp::Num, F::Num, v2d::Bijection{Num, Num}; use_asir=false) = apply_do(DiffOp |> value, F, v2d; use_asir=use_asir)
+
+# function apply_do2(DiffOp::PolyDiffOp, F::Num, v2d::{})
+# end
 
 function dmul(dol::Num, dor::BasicSymbolic, v2d::Bijection{Num, Num}; use_asir=false)
 	dor_pf = PolyForm(dor)

@@ -3,12 +3,13 @@ module PfaffianSystems
 import Base: sort
 
 # Write your package code here.
+using Base: @invokelatest
 using Bijections
 using Symbolics
 # --- derivative of Symbolics does not keep coefficient type ---
 # using Symbolics: derivative, value, get_variables, scalarize
 # --------------------------------------------------------------
-using Symbolics: value, get_variables, scalarize, derivative
+using Symbolics: value, get_variables, scalarize, derivative, wrap, unwrap
 using SymbolicUtils: PolyForm, BasicSymbolic, isdiv, unpolyize
 using DynamicPolynomials
 using DynamicPolynomials: variables, exponents, coefficient, term
@@ -17,7 +18,11 @@ using DifferentialEquations: solve, ODEProblem
 using DataStructures: OrderedSet
 # export OrderedSet
 # using Symbolics: scalarize
-using Base: @invokelatest
+using MultivariatePolynomials
+
+const DP = DynamicPolynomials
+const MP = MultivariatePolynomials
+
 
 function Bijection{S, T}(dict::AbstractDict{S, T}) where S where T
 	return Bijection(dict)
@@ -30,7 +35,8 @@ include("AsirWrapper.jl")
 export isAsirAvailable, vec2str, asir_derivative, asir_reduce, asir_fctr
 
 include("DiffOps.jl")
-export genVars, addVars, apply_do, dmul
+export PolyDiffOp, RatDiffOp
+export genVars, addVars, apply_do, dmul, genVars2, addVars2
 
 include("DIdeals.jl")
 export DIdeal, stdmon!, isZeroDimensional, makeTestVarsAndIdeal, apply_ideal
