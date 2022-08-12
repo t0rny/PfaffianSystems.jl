@@ -22,6 +22,7 @@ using MultivariatePolynomials
 
 const DP = DynamicPolynomials
 const MP = MultivariatePolynomials
+const SU = SymbolicUtils
 
 
 function Bijection{S, T}(dict::AbstractDict{S, T}) where S where T
@@ -36,7 +37,7 @@ export isAsirAvailable, vec2str, asir_derivative, asir_reduce, asir_fctr
 
 include("DiffOps.jl")
 export PolyDiffOp, RatDiffOp
-export genVars, addVars, apply_do, dmul, genVars2, addVars2
+export genVars, addVars, apply_do, dmul, genVars2
 
 include("DIdeals.jl")
 export DIdeal, stdmon!, isZeroDimensional, makeTestVarsAndIdeal, apply_ideal
