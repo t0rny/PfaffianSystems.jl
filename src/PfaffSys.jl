@@ -83,11 +83,16 @@ function buildFuncA(pf::PfaffianSystem)
 end
 
 # private
-function _integrate_core(funcA, init_vecs::AbstractMatrix{Float64}, z_init::AbstractVector{Float64}, z_term::AbstractVector{Float64})
+_dqds(funcA, z, dzds, q) = reduce(+, funcA(z).*dzds)*q
+_dqds!(dqds, funcA, z, dzds, q) = begin
+	dqds .= reduce(+, funcA(z).*dzds)*q
+end
+function _integrate_DEjl(funcA, init_vecs::AbstractMatrix{Float64}, z_init::AbstractVector{Float64}, z_term::AbstractVector{Float64})
 	z_traj(s) = ((z_term-z_init)*s + z_init, (z_term-z_init))
 	PfODE = (dq, q, param, s)->begin
 		zs, dzds = (param)(s)
-		dq .= reduce(+, funcA(zs).*dzds)*q
+		# dq .= reduce(+, funcA(zs).*dzds)*q
+		_dqds!(dq, funcA, zs, dzds, q)
 	end
 
 	pf_ode = ODEProblem(PfODE, init_vecs, [0, 1], z_traj)
@@ -96,7 +101,43 @@ function _integrate_core(funcA, init_vecs::AbstractMatrix{Float64}, z_init::Abst
 	return sol.u
 end
 
-function integratePf(pf::PfaffianSystem, init_vecs::AbstractMatrix{<:Real}, z_init::Dict{Num, <:Real}, z_term::Dict{Num, <:Real})
+
+mutable struct _RK4_core
+	dqdss::Vector{Matrix{Float64}}
+	_RK4_core(q::Matrix{Float64}) = new(fill(q, 4))
+end
+
+function (rk4::_RK4_core)(q_next::Matrix{Float64}, q::Matrix{Float64}, funcA, z::Vector{Float64}, dzds::Vector{Float64})
+	dqdss = rk4.dqdss
+	@views _dqds!(dqdss[1], funcA, z, dzds, q) 
+	@views _dqds!(dqdss[2], funcA, z + dzds/2, dzds, q + dqdss[1]/2)
+	@views _dqds!(dqdss[3], funcA, z + dzds/2, dzds, q + dqdss[2]/2)
+	@views _dqds!(dqdss[4], funcA, z + dzds, dzds, q + dqdss[3])
+	return @views q_next .= q + (dqdss[1] + 2*dqdss[2] + 2*dqdss[3] + dqdss[4])/6
+end
+
+function _integrate_RK4(funcA, init_vecs::Matrix{Float64}, z_init::Vector{Float64}, z_term::Vector{Float64}; N=100)
+	zs = range(z_init, z_term, N+1)
+	# sol = fill(copy(init_vecs), N+1)
+	sol = [copy(init_vecs) for _ in 1:N+1]
+	rk4core = _RK4_core(zeros(size(init_vecs)))
+
+	for i =1:N
+		@views rk4core(sol[i+1], sol[i], funcA, zs[i], zs[i+1] - zs[i])
+	end
+
+	return sol
+end 
+
+function _integrate_core(funcA, init_vecs::AbstractMatrix{Float64}, z_init::AbstractVector{Float64}, z_term::AbstractVector{Float64}, N::Integer, method) 
+	if method == :rk4
+		_integrate_RK4(funcA, init_vecs, z_init, z_term; N = N)
+	else
+		_integrate_DEjl(funcA, init_vecs, z_init, z_term)
+	end
+end
+
+function integratePf(pf::PfaffianSystem, init_vecs::AbstractMatrix{<:Real}, z_init::Dict{Num, <:Real}, z_term::Dict{Num, <:Real}; N=100, method=:rk4)
 	d = length(pf.std_mons)
 	@assert size(init_vecs)[1] == d "Error: invalid length of initial vectors"
 	# @assert length(pf.v2d.domain) == length(z_init) == length(z_term) "Error: invalid lengths of initial and terminal z vectors"
@@ -114,36 +155,40 @@ function integratePf(pf::PfaffianSystem, init_vecs::AbstractMatrix{<:Real}, z_in
 		funcA, 
 		convert(Matrix{Float64}, init_vecs), 
 		convert(Vector{Float64}, zvec_init), 
-		convert(Vector{Float64}, zvec_term)
+		convert(Vector{Float64}, zvec_term), 
+		N,
+		method
 		)
 	return sol
 end
 
-function integratePf(pf::PfaffianSystem, init_vecs::AbstractMatrix{<:Real}, z_traj::Dict{Num, <:AbstractVector{<:Real}})
+function integratePf(pf::PfaffianSystem, init_vecs::AbstractMatrix{<:Real}, z_traj::Dict{Num, <:AbstractVector{<:Real}}; N = 1, method=:rk4)
 	d = length(pf.std_mons)
 	# N = size(z_traj)[2]
 	@assert size(init_vecs)[1] == d "Error: invalid length of initial vectors"
 	@assert issetequal(pf.v2d.domain, keys(z_traj)) "Error: invalid variables in trajectory of z"
 	# @assert reduce(==, values(z_traj) .|> length) "Error: lengths of series $(values(z_traj) .|> length) are different"
 	@assert (values(z_traj) .|> length) |> (s->all(t->t==s[1], s)) "Error: lengths of series $(values(z_traj) .|> length) are different"
-	N = values(z_traj) |> first |> length
+	zN = values(z_traj) |> first |> length
 
 	exprFuncA, vars = buildFuncA(pf)
 	funcA(s) = map(exprFuncA) do fA
 		@invokelatest fA(s)
 	end
 
-	vecs = fill(convert(Matrix{Float64}, init_vecs), N) 
+	vecs = fill(convert(Matrix{Float64}, init_vecs), zN) 
 	zvec_traj = convert(Matrix{Float64}, hcat([z_traj[v] for v in vars]...)' |> collect)
 
-	for i = 1:N-1
+	for i = 1:zN-1
 		zvec_init = @view zvec_traj[:, i]
 		zvec_term = @view zvec_traj[:, i+1]
 		sol = _integrate_core(
 			funcA, 
 			vecs[i], 
-			zvec_init, 
-			zvec_term
+			convert(Vector{Float64}, zvec_init), 
+			convert(Vector{Float64}, zvec_term),
+			N,
+			method
 			)
 		vecs[i+1] = sol[length(sol)]
 	end
