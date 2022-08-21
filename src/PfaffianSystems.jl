@@ -36,7 +36,7 @@ include("AsirWrapper.jl")
 export isAsirAvailable, vec2str, asir_derivative, asir_reduce, asir_fctr
 
 include("DiffOps.jl")
-export PolyDiffOp, RatDiffOp
+export DGen, PolyDiffOp, RatDiffOp
 export genVars, addVars, apply_do, dmul, genVars2
 
 include("DIdeals.jl")

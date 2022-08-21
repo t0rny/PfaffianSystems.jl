@@ -15,8 +15,8 @@ struct PolyDiffOp <: DiffOp
 	p2s::Bijection{DGen, Num}
 
 	PolyDiffOp(p::Polynomial) = new(p, get_var2diff(), get_pv2sym())
-	# PolyDiffOp(g::DGen) = new(convert(Polynomial{false, Rational}, g), get_var2diff(), get_pv2sym())
-	PolyDiffOp(g::DGen, v2d, p2s) = new(convert(Polynomial{false, Rational}, g), v2d, p2s)
+	PolyDiffOp(g::DGen) = new(convert(Polynomial{false, Rational}, g), get_var2diff(), get_pv2sym())
+	# PolyDiffOp(g::DGen, v2d, p2s) = new(convert(Polynomial{false, Rational}, g), v2d, p2s)
 end
 
 Base.print(io::IO, dop::DiffOp) = print(io, dop.p)
@@ -25,36 +25,52 @@ Base.show(io::IO, dop::DiffOp) = show(io, dop.p)
 # PolyDiffOp(p::Polynomial) = convert(PolyDiffOp, p)
 
 # Refer to construction of PolyForm in [SymbolicUtils](https://github.com/JuliaSymbolics/SymbolicUtils.jl)
-const VAR2DIFF = Ref(WeakRef(nothing))
-const PV2SYM = Ref(WeakRef(nothing))
 
-clear_dicts() = begin
-	VAR2DIFF[] = WeakRef(nothing)
-	PV2SYM[] = WeakRef(nothing)
-	nothing
-end
+# let const VAR2DIFF = Bijection{DGen, DGen}(), const PV2SYM = Bijection{Dgen, Num}()
+# end
+
+# const VAR2DIFF = Ref(WeakRef(nothing))
+# const PV2SYM = Ref(WeakRef(nothing))
+
+# Use common dictionaries in all PolyDiffOp 
+const VAR2DIFF = Bijection{DGen, DGen}()
+const PV2SYM = Bijection{DGen, Num}()
+
+# clear_dicts() = begin
+# 	VAR2DIFF[] = WeakRef(nothing)
+# 	PV2SYM[] = WeakRef(nothing)
+# 	nothing
+# end
 
 function get_var2diff()
-	v = VAR2DIFF[].value
-	if v === nothing
-		d = Bijection{DGen, DGen}()
-		VAR2DIFF[] = WeakRef(d)
-		return d
-	else
-		return v
-	end
+	return VAR2DIFF
 end
 
 function get_pv2sym()
-	v = PV2SYM[].value
-	if v === nothing
-		d = Bijection{DGen, Num}()
-		PV2SYM[] = WeakRef(d)
-		return d
-	else
-		return v
-	end
+	return PV2SYM
 end
+
+# function get_var2diff()
+# 	v = VAR2DIFF[].value
+# 	if v === nothing
+# 		d = Bijection{DGen, DGen}()
+# 		VAR2DIFF[] = WeakRef(d)
+# 		return d
+# 	else
+# 		return v
+# 	end
+# end
+
+# function get_pv2sym()
+# 	v = PV2SYM[].value
+# 	if v === nothing
+# 		d = Bijection{DGen, Num}()
+# 		PV2SYM[] = WeakRef(d)
+# 		return d
+# 	else
+# 		return v
+# 	end
+# end
 
 # function check_dicts_validity(p, q)
 # 	@assert p.v2d === q.v2d "v2d mismatch"
@@ -128,9 +144,10 @@ julia> y, dy, v2d = addVars("y", 2, v2d)
 genVars(name::AbstractString) = addVars(name, Bijection{Num, Num}())
 genVars(name::AbstractString, n::Integer) = addVars(name, n, Bijection{Num, Num}())
 
-function genVars2(name::AbstractString, v2d=get_var2diff(), p2s=get_pv2sym())
-	# v2d = get_var2diff()
-	# p2s = get_pv2sym()
+# function genVars2(name::AbstractString, v2d=get_var2diff(), p2s=get_pv2sym())
+function genVars2(name::AbstractString)
+	v2d = get_var2diff()
+	p2s = get_pv2sym()
 
 	@assert !startswith(name, 'd') "variable name \"$name\" must start from letters except for \"d\""
 	# @assert !in(name, DP.name.(v2d.domain)) "already exists variable named \"$name\""
@@ -142,12 +159,8 @@ function genVars2(name::AbstractString, v2d=get_var2diff(), p2s=get_pv2sym())
 	s2p = active_inv(p2s)
 
 	if haskey(s2p, symvar) && haskey(s2p, symdop) && v2d[s2p[symvar]] == s2p[symdop]
-		@show objectid(get_var2diff())
-		@show objectid(v2d)
-		@show objectid(get_pv2sym())
-		@show objectid(p2s)
 		@warn "variable already exist"
-		return PolyDiffOp(s2p[symvar], v2d, p2s), PolyDiffOp(s2p[symdop], v2d, p2s)
+		return PolyDiffOp(s2p[symvar]), PolyDiffOp(s2p[symdop])
 	else
 
 		pvar = DGen(name)
@@ -156,11 +169,7 @@ function genVars2(name::AbstractString, v2d=get_var2diff(), p2s=get_pv2sym())
 		s2p[symvar] = pvar
 		s2p[symdop] = pdop
 		v2d[pvar] = pdop
-		@show objectid(get_var2diff())
-		@show objectid(v2d)
-		@show objectid(get_pv2sym())
-		@show objectid(p2s)
-		return PolyDiffOp(pvar, v2d, p2s), PolyDiffOp(pdop, v2d, p2s)
+		return PolyDiffOp(pvar), PolyDiffOp(pdop)
 	end
 end
 # genVars2(name::AbstractString) = genVars2(name, get_var2diff(), get_pv2sym())
