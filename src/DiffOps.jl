@@ -1,7 +1,5 @@
 
 # PolyDiffOp(a::Vector{T}, x::MonomialVector{false}) = Polynomial{false, Rational{Integer}}(a, x)
-const DGen = PolyVar{false}
-abstract type DiffOp end
 
 # struct Dgen <: DiffOp
 # 	p::PolyVar{false}
@@ -9,20 +7,30 @@ abstract type DiffOp end
 # 	p2s::Bijection{PolyVar{false}, Num}
 # end
 
-struct PolyDiffOp <: DiffOp
-	p::Polynomial{false, Rational}
-	v2d::Bijection{DGen, DGen}
-	p2s::Bijection{DGen, Num}
+# struct PolyDiffOp <: DiffOp
+# 	p::Polynomial{false, Rational}
+# 	v2d::Bijection{DGen, DGen}
+# 	p2s::Bijection{DGen, Num}
 
-	PolyDiffOp(p::Polynomial) = new(p, get_var2diff(), get_pv2sym())
-	PolyDiffOp(g::DGen) = new(convert(Polynomial{false, Rational}, g), get_var2diff(), get_pv2sym())
-	# PolyDiffOp(g::DGen, v2d, p2s) = new(convert(Polynomial{false, Rational}, g), v2d, p2s)
-end
+# 	PolyDiffOp(p::Polynomial) = new(p, get_var2diff(), get_pv2sym())
+# 	PolyDiffOp(g::DGen) = new(convert(Polynomial{false, Rational}, g), get_var2diff(), get_pv2sym())
+# 	# PolyDiffOp(g::DGen, v2d, p2s) = new(convert(Polynomial{false, Rational}, g), v2d, p2s)
+# end
 
-Base.print(io::IO, dop::DiffOp) = print(io, dop.p)
-Base.show(io::IO, dop::DiffOp) = show(io, dop.p)
-# const PolyDiffOp = Polynomial{false, Rational}
-# PolyDiffOp(p::Polynomial) = convert(PolyDiffOp, p)
+# Base.print(io::IO, dop::DiffOp) = print(io, dop.p)
+# Base.show(io::IO, dop::DiffOp) = show(io, dop.p)
+
+# Base.:(+)(p::PolyDiffOp, q::PolyDiffOp) = PolyDiffOp(p.p + q.p)
+
+# Base.:(*)(p::PolyDiffOp, q::PolyDiffOp) = PolyDiffOp(p.p * q.p)
+
+# Base.:(^)(p::PolyDiffOp, n::Integer) = PolyDiffOp(p.p^n)
+
+const DGen = PolyVar{false}
+const MonDiffOp = Monomial{false}
+const PolyDiffOp = Polynomial{false, Rational{Int64}}
+PolyDiffOp(p::Polynomial) = convert(PolyDiffOp, p) |> canonicalize
+PolyDiffOp(g::DGen) = convert(PolyDiffOp, g)
 
 # Refer to construction of PolyForm in [SymbolicUtils](https://github.com/JuliaSymbolics/SymbolicUtils.jl)
 
@@ -78,12 +86,6 @@ end
 
 # 	return p.v2d, p.p2s
 # end
-
-Base.:(+)(p::PolyDiffOp, q::PolyDiffOp) = PolyDiffOp(p.p + q.p)
-
-Base.:(*)(p::PolyDiffOp, q::PolyDiffOp) = PolyDiffOp(p.p * q.p)
-
-Base.:(^)(p::PolyDiffOp, n::Integer) = PolyDiffOp(p.p^n)
 
 # TOOD: differential operators with coefficients in rational functions should be implemented
 # const RatDiffOp = Polynomial{false, RationalPoly{Polynomial{true, Rational{T}}, Polynomial{true, Rational{T}}}} where T
@@ -175,8 +177,8 @@ end
 # genVars2(name::AbstractString) = genVars2(name, get_var2diff(), get_pv2sym())
 
 function genVars2(name::AbstractString, n::Integer)
-	pvars = Vector{DiffOp}(undef, n)
-	pdiffops = Vector{DiffOp}(undef, n)
+	pvars = Vector{PolyDiffOp}(undef, n)
+	pdiffops = Vector{PolyDiffOp}(undef, n)
 
 	for i in eachindex(pvars)
 		pvars[i], pdiffops[i] = genVars2(name*string(i))
@@ -240,16 +242,39 @@ apply_do(DiffOp::Num, F::Num, v2d::Bijection{Num, Num}; use_asir=false) = apply_
 # end
 
 isDiff(s::DGen) = startswith(DP.name(s), 'd')
-function canonic(diffop::PolyDiffOp)
-	v2d = diff
-	for do_term in terms(diffop)
-		mon = monomial(do_term)
-		vars = variables(mon)
-		exps = exponents(mon)
-
-		for i in reverse(eachindex(exps))
+# function multiple_diff(p::PolyDiffOp, v::DGen, n::Integer) 
+# 	retpdop = p
+# 	for _ in 1:n
+# 		retpdop = DP.differentiate(retpdop, v)
+# 	end
+# 	return retpdop
+# end
+function canonicalize(diffop::PolyDiffOp)
+	coeffs = DP.coefficients(diffop)
+	mons = DP.monomials(diffop) |> DP.canonical
+	canOps = Vector{PolyDiffOp}(undef, length(mons))
+	for i in eachindex(mons)
+		canOps[i] = canonicalize(mons[i])
+	end
+	return coeffs'*canOps
+end
+function canonicalize(dopmon::MonDiffOp)
+	d2v = get_var2diff() |> active_inv
+	v = DP.variables(dopmon)
+	e = DP.exponents(dopmon)
+	retPolydop = one(PolyDiffOp)
+	for i in reverse(eachindex(v))
+		e[i] == 0 && continue
+		if isDiff(v[i])
+			for _ in 1:e[i]
+				retPolydop = PolyDiffOp(retPolydop*v[i]) + DP.differentiate(retPolydop, d2v[v[i]])
+			end
+		else
+			retPolydop = v[i]^e[i]*retPolydop
 		end
 	end
+	# return vars, exps
+	return retPolydop
 end
 
 function dmul(dol::Num, dor::BasicSymbolic, v2d::Bijection{Num, Num}; use_asir=false)
@@ -271,3 +296,12 @@ function dmul(dol::Num, dor::BasicSymbolic, v2d::Bijection{Num, Num}; use_asir=f
 end
 dmul(dol::Num, dor::Num, v2d::Bijection{Num, Num}; use_asir=false) = dmul(dol, value(dor), v2d; use_asir=use_asir)
 dmul(dol, dor, v2d::Bijection{Num, Num}; use_asir=false) = dol*dor
+
+function makeTestEnvs()
+	# global PS = PfaffianSystems
+	# global DP = DynamicPolynomials
+	x, dx = genVars2("x")
+	p = (x + dx)^3 
+	m = DP.monomials(p) |> DP.canonical |> (s->s[8])
+	return x, dx, p, m
+end
