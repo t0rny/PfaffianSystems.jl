@@ -1,36 +1,44 @@
 
 # PolyDiffOp(a::Vector{T}, x::MonomialVector{false}) = Polynomial{false, Rational{Integer}}(a, x)
 
+const DGen = PolyVar{false}
+const DGenMon = Monomial{false}
+
+abstract type DiffOp end
+
 # struct Dgen <: DiffOp
-# 	p::PolyVar{false}
+	# p::PolyVar{false}
 # 	v2d::Bijection{PolyVar{false}, PolyVar{false}}
 # 	p2s::Bijection{PolyVar{false}, Num}
 # end
 
-# struct PolyDiffOp <: DiffOp
-# 	p::Polynomial{false, Rational}
+struct PolyDiffOp <: DiffOp
+	p::Polynomial{false, Rational}
 # 	v2d::Bijection{DGen, DGen}
 # 	p2s::Bijection{DGen, Num}
 
-# 	PolyDiffOp(p::Polynomial) = new(p, get_var2diff(), get_pv2sym())
-# 	PolyDiffOp(g::DGen) = new(convert(Polynomial{false, Rational}, g), get_var2diff(), get_pv2sym())
+	PolyDiffOp(p::Polynomial) = new(p)
+	PolyDiffOp(r::Real) = new(one(Polynomial{false, Rational})*convert(Rational, r))
+	PolyDiffOp(g::DGen) = new(convert(Polynomial{false, Rational}, g))
 # 	# PolyDiffOp(g::DGen, v2d, p2s) = new(convert(Polynomial{false, Rational}, g), v2d, p2s)
-# end
+end
 
-# Base.print(io::IO, dop::DiffOp) = print(io, dop.p)
-# Base.show(io::IO, dop::DiffOp) = show(io, dop.p)
+Base.print(io::IO, dop::DiffOp) = print(io, dop.p)
+Base.show(io::IO, dop::DiffOp) = show(io, dop.p)
 
-# Base.:(+)(p::PolyDiffOp, q::PolyDiffOp) = PolyDiffOp(p.p + q.p)
 
-# Base.:(*)(p::PolyDiffOp, q::PolyDiffOp) = PolyDiffOp(p.p * q.p)
+Base.isequal(p::PolyDiffOp, q::PolyDiffOp) = isequal(p.p, q.p)
+Base.:+(p::PolyDiffOp, q::PolyDiffOp) = PolyDiffOp(p.p + q.p)
+Base.:*(p::PolyDiffOp, q::PolyDiffOp) = PolyDiffOp(p.p * q.p) |> canonicalize
+Base.:^(p::PolyDiffOp, n::Integer) = PolyDiffOp(p.p^n) |> canonicalize
+Base.:*(p::PolyDiffOp, r::Real) = PolyDiffOp(p.p*convert(Rational, r))
+Base.:*(r::Real, p::PolyDiffOp) = PolyDiffOp(p.p*convert(Rational, r))
 
-# Base.:(^)(p::PolyDiffOp, n::Integer) = PolyDiffOp(p.p^n)
-
-const DGen = PolyVar{false}
-const MonDiffOp = Monomial{false}
-const PolyDiffOp = Polynomial{false, Rational{Int64}}
-PolyDiffOp(p::Polynomial) = convert(PolyDiffOp, p) |> canonicalize
-PolyDiffOp(g::DGen) = convert(PolyDiffOp, g)
+Base.one(::Type{PolyDiffOp}) = PolyDiffOp(one(Polynomial{false, Rational}))
+Base.zero(::Type{PolyDiffOp}) = PolyDiffOp(zero(Polynomial{false, Rational}))
+# const PolyDiffOp = Polynomial{false, Rational{Int64}}
+# PolyDiffOp(p::Polynomial) = convert(PolyDiffOp, p) |> canonicalize
+# PolyDiffOp(g::DGen) = convert(PolyDiffOp, g)
 
 # Refer to construction of PolyForm in [SymbolicUtils](https://github.com/JuliaSymbolics/SymbolicUtils.jl)
 
@@ -42,21 +50,33 @@ PolyDiffOp(g::DGen) = convert(PolyDiffOp, g)
 
 # Use common dictionaries in all PolyDiffOp 
 const VAR2DIFF = Bijection{DGen, DGen}()
-const PV2SYM = Bijection{DGen, Num}()
+const NAME2SYM = OrderedDict{String, Pair{DGen, Num}}()
+# const PV2SYM = Bijection{DGen, Num}()
+# const VARORDER = Vector{DGen}()
 
-# clear_dicts() = begin
-# 	VAR2DIFF[] = WeakRef(nothing)
-# 	PV2SYM[] = WeakRef(nothing)
-# 	nothing
-# end
 
 function get_var2diff()
 	return VAR2DIFF
 end
 
-function get_pv2sym()
-	return PV2SYM
+function get_name2sym()
+	return NAME2SYM
 end
+
+get_pvar_from_name(n2s, name) = n2s[name].first
+get_sym_from_name(n2s, name) = n2s[name].second
+
+function clear_dicts()
+	v2d = get_var2diff()
+	n2s = get_name2sym()
+
+	empty!(v2d)
+	empty!(n2s)
+	nothing
+end
+# function get_varorder()
+# 	return VARORDER
+# end
 
 # function get_var2diff()
 # 	v = VAR2DIFF[].value
@@ -80,12 +100,27 @@ end
 # 	end
 # end
 
-# function check_dicts_validity(p, q)
-# 	@assert p.v2d === q.v2d "v2d mismatch"
-# 	@assert p.p2s === q.p2s "v2d mismatch"
+function check_dicts_sanity()
+	v2d = get_var2diff()
+	n2s = get_name2sym()
 
-# 	return p.v2d, p.p2s
-# end
+	for v in union(domain(v2d))
+		# if !haskey(n2s, DP.name(v))
+		# 	@assert "$(v) is not included in keys of PVAR2SYM"
+		# end
+		@assert haskey(n2s, DP.name(v)) "$(v) is not included in keys of NAME2SYM"
+	end
+	# @assert p.v2d === q.v2d "v2d mismatch"
+	# @assert p.p2s === q.p2s "v2d mismatch"
+
+	# return p.v2d, p.p2s
+	return true
+end
+
+function check_var_existence(name::AbstractString)
+	v2d = get_var2diff()
+	return check_dicts_sanity() && (name in DP.name.(domain(v2d)))
+end
 
 # TOOD: differential operators with coefficients in rational functions should be implemented
 # const RatDiffOp = Polynomial{false, RationalPoly{Polynomial{true, Rational{T}}, Polynomial{true, Rational{T}}}} where T
@@ -149,28 +184,32 @@ genVars(name::AbstractString, n::Integer) = addVars(name, n, Bijection{Num, Num}
 # function genVars2(name::AbstractString, v2d=get_var2diff(), p2s=get_pv2sym())
 function genVars2(name::AbstractString)
 	v2d = get_var2diff()
-	p2s = get_pv2sym()
+	n2s = get_name2sym()
+	# vorder = get_varorder()
 
 	@assert !startswith(name, 'd') "variable name \"$name\" must start from letters except for \"d\""
 	# @assert !in(name, DP.name.(v2d.domain)) "already exists variable named \"$name\""
 
-	var_ex = Symbol(name)
-	dop_ex = Symbol('d', var_ex)
-	symvar, symdop = @variables $var_ex, $dop_ex
+	# s2p = active_inv(p2s)
 
-	s2p = active_inv(p2s)
-
-	if haskey(s2p, symvar) && haskey(s2p, symdop) && v2d[s2p[symvar]] == s2p[symdop]
+	# if haskey(s2p, symvar) && haskey(s2p, symdop) && v2d[s2p[symvar]] == s2p[symdop]
+	if check_var_existence(name) 
 		@warn "variable already exist"
-		return PolyDiffOp(s2p[symvar]), PolyDiffOp(s2p[symdop])
+		pvar = get_pvar_from_name(n2s, name)
+		return pvar, v2d[pvar]
 	else
+
+		var_ex = Symbol(name)
+		symvar = @variables $var_ex
 
 		pvar = DGen(name)
 		pdop = DGen('d'*name)
 
-		s2p[symvar] = pvar
-		s2p[symdop] = pdop
+		# s2p[symvar] = pvar
+		# s2p[symdop] = pdop
+		n2s[name] = pvar=>symvar
 		v2d[pvar] = pdop
+		# push!(vorder, pvar)
 		return PolyDiffOp(pvar), PolyDiffOp(pdop)
 	end
 end
@@ -242,39 +281,99 @@ apply_do(DiffOp::Num, F::Num, v2d::Bijection{Num, Num}; use_asir=false) = apply_
 # end
 
 isDiff(s::DGen) = startswith(DP.name(s), 'd')
-# function multiple_diff(p::PolyDiffOp, v::DGen, n::Integer) 
-# 	retpdop = p
-# 	for _ in 1:n
-# 		retpdop = DP.differentiate(retpdop, v)
-# 	end
-# 	return retpdop
-# end
 function canonicalize(diffop::PolyDiffOp)
-	coeffs = DP.coefficients(diffop)
-	mons = DP.monomials(diffop) |> DP.canonical
+	coeffs = DP.coefficients(diffop.p)
+	mons = DP.monomials(diffop.p)
 	canOps = Vector{PolyDiffOp}(undef, length(mons))
 	for i in eachindex(mons)
 		canOps[i] = canonicalize(mons[i])
 	end
 	return coeffs'*canOps
 end
-function canonicalize(dopmon::MonDiffOp)
-	d2v = get_var2diff() |> active_inv
+function canonicalize(dopmon::DGenMon)
+	# v2d = get_var2diff()
+	# ordVars = get_name2sym() |> values |> collect .|> first
+	# vlist = DP.variables(dopmon)
+	# elist = DP.exponents(dopmon)
+	# for v in ordVars
+	# 	v in vlist || continue
+	# 	retPoly= one(Polynomial{false, Rational})
+	# 	vindcs = @. (vlist == v) || (vlist == v2d[v])
+	# 	vs = vlist[vindcs]
+	# 	es = elist[vindcs]
+	# end
+	d2v =  get_var2diff() |> active_inv
 	v = DP.variables(dopmon)
 	e = DP.exponents(dopmon)
-	retPolydop = one(PolyDiffOp)
+	# d2v =  active_inv(v2d)
+	# retPolydop = PolyDiffOp(1)
+	retPoly= one(Polynomial{false, Rational})
 	for i in reverse(eachindex(v))
 		e[i] == 0 && continue
 		if isDiff(v[i])
 			for _ in 1:e[i]
-				retPolydop = PolyDiffOp(retPolydop*v[i]) + DP.differentiate(retPolydop, d2v[v[i]])
+				retPoly= retPoly*v[i] + DP.differentiate(retPoly, d2v[v[i]])
 			end
 		else
-			retPolydop = v[i]^e[i]*retPolydop
+			retPoly= v[i]^e[i]*retPoly
 		end
 	end
 	# return vars, exps
-	return retPolydop
+	# return PolyDiffOp(retPoly)
+	return [tidyup_commutatives(m) for m in DP.monomials(retPoly)] |> sum |> PolyDiffOp
+end
+# need to sort commutative symbols for consistent expression
+# function ltDGens(v, u)
+# 	v2d = get_var2diff()
+# 	if v in domain(v2d)
+# 		u in image(v2d) && return true
+
+# 	else
+# 	end
+# end
+function tidyup_commutatives(dopmon::DGenMon)
+	v2d = get_var2diff() 
+	# d2v = get_var2diff() |> active_inv
+	ordVars = get_name2sym() |> values |> collect .|> first
+	syms = DP.variables(dopmon)
+	exps = DP.exponents(dopmon)
+	vars = Vector{DGen}()
+	varexps = Vector{Int64}()
+	dops = Vector{DGen}()
+	dopexps = Vector{Int64}()
+	sizehint!(vars, length(syms))
+	sizehint!(varexps, length(syms))
+	sizehint!(dops, length(syms))
+	sizehint!(dopexps, length(syms))
+	# vindcs = map(syms) do v v in image(d2v) end
+	# vars = syms[vindcs]
+	# varexps = exps[vindcs]
+	# dops = syms[.!vindcs]
+	# dopexps = exps[.!vindcs]
+
+	for v in ordVars
+		vinds = findall(syms .== v)
+		e = sum(exps[vinds])
+		if e != 0
+			push!(vars, v)
+			push!(varexps, e)
+		end
+		dinds = findall(syms .== v2d[v])
+		e = sum(exps[dinds])
+		if e != 0
+			push!(dops, v)
+			push!(dopexps, e)
+		end
+	end
+
+	# varperm = sortperm(vars, lt=((v, u)->findfirst(ordVars .== v) < findfirst(ordVars .== u)))
+	# dopperm = sortperm(dops, lt=((v, u)->findfirst(ordVars .== d2v[v]) < findfirst(ordVars .== d2v[u])))
+
+	# vars = vars[varperm]
+	# for v in ordVars
+	# 	v in vlist || continue
+	# end
+	return DGenMon([vars; dops], [varexps; dopexps])
 end
 
 function dmul(dol::Num, dor::BasicSymbolic, v2d::Bijection{Num, Num}; use_asir=false)
@@ -300,8 +399,9 @@ dmul(dol, dor, v2d::Bijection{Num, Num}; use_asir=false) = dol*dor
 function makeTestEnvs()
 	# global PS = PfaffianSystems
 	# global DP = DynamicPolynomials
-	x, dx = genVars2("x")
-	p = (x + dx)^3 
-	m = DP.monomials(p) |> DP.canonical |> (s->s[8])
-	return x, dx, p, m
+	x, dx = genVars2("x", 2)
+	p = (x[1] + dx[1])^3 
+	q = (x[2] + dx[2])^2
+	# m = DP.monomials(p.p) |> DP.canonical |> (s->s[8])
+	return x, dx, p, q 
 end

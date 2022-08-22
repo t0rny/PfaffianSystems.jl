@@ -15,7 +15,7 @@ using DynamicPolynomials
 using DynamicPolynomials: variables, exponents, coefficient, term
 using DifferentialEquations: solve, ODEProblem
 # using Symbolics: get_variables
-using DataStructures: OrderedSet
+using DataStructures: OrderedSet, OrderedDict
 # export OrderedSet
 # using Symbolics: scalarize
 using MultivariatePolynomials
@@ -25,8 +25,15 @@ const MP = MultivariatePolynomials
 const SU = SymbolicUtils
 
 
-function Bijection{S, T}(dict::AbstractDict{S, T}) where S where T
+function Bijection{S, T}(dict::AbstractDict{S, T}) where {S, T}
 	return Bijection(dict)
+end
+function empty!(b::Bijection{S, T}) where {S, T}
+	dom = domain(b)
+	for x in dom
+		delete!(b, x)
+	end
+	return b
 end
 
 sort(v::Vector{Num}) = v[sortperm(string.(v))]
