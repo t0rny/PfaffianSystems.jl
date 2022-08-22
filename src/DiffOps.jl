@@ -196,7 +196,7 @@ function genVars2(name::AbstractString)
 	if check_var_existence(name) 
 		@warn "variable already exist"
 		pvar = get_pvar_from_name(n2s, name)
-		return pvar, v2d[pvar]
+		return PolyDiffOp(pvar), PolyDiffOp(v2d[pvar])
 	else
 
 		var_ex = Symbol(name)
@@ -277,10 +277,48 @@ function apply_do(DiffOp::Union{Integer, AbstractFloat}, F::Num, v2d::Bijection{
 end
 apply_do(DiffOp::Num, F::Num, v2d::Bijection{Num, Num}; use_asir=false) = apply_do(DiffOp |> value, F, v2d; use_asir=use_asir)
 
+function (dop::DiffOp)(F::Num)
+	coeffs = DP.coefficients(dop.p)
+	mons = DP.monomials(dop.p)
+	appliedNums = Vector{Num}(undef, length(mons))
+	for i in eachindex(mons)
+		appliedNums[i] = mons[i](F)
+	end
+	return coeffs'*appliedNums
+end
+
+function (dopmon::DGenMon)(F::Num)
+	d2v = get_var2diff() |> active_inv
+	n2s = get_name2sym()
+
+	retNum = copy(F)
+
+	ss = DP.variables(dopmon)
+	es = DP.exponents(dopmon)
+
+	# dopmon should be canonical 
+	for i in reverse(eachindex(ss))
+		if isDiff(ss[i])
+			for _ in 1:es[i]
+				retNum = derivative(retNum, get_sym_from_name(n2s, DP.name(d2v[ss[i]])))
+			end
+		else
+			retNum = get_sym_from_name(n2s, DP.name(ss[i]))^es[i]*retNum
+		end
+	end
+	return retNum
+end
+
+# function (g::DGen)(F, n2s, d2v)
+# 	derivative(F, get_sym_from_name(n2s, d2v[g]))
+# end
+
 # function apply_do2(DiffOp::PolyDiffOp, F::Num, v2d::{})
 # end
 
-isDiff(s::DGen) = startswith(DP.name(s), 'd')
+# isDiff(s::DGen) = startswith(DP.name(s), 'd')
+isVar(s::DGen) = s in domain(get_var2diff())
+isDiff(s::DGen) = s in image(get_var2diff())
 function canonicalize(diffop::PolyDiffOp)
 	coeffs = DP.coefficients(diffop.p)
 	mons = DP.monomials(diffop.p)
@@ -323,14 +361,6 @@ function canonicalize(dopmon::DGenMon)
 	return [tidyup_commutatives(m) for m in DP.monomials(retPoly)] |> sum |> PolyDiffOp
 end
 # need to sort commutative symbols for consistent expression
-# function ltDGens(v, u)
-# 	v2d = get_var2diff()
-# 	if v in domain(v2d)
-# 		u in image(v2d) && return true
-
-# 	else
-# 	end
-# end
 function tidyup_commutatives(dopmon::DGenMon)
 	v2d = get_var2diff() 
 	# d2v = get_var2diff() |> active_inv
@@ -345,11 +375,6 @@ function tidyup_commutatives(dopmon::DGenMon)
 	sizehint!(varexps, length(syms))
 	sizehint!(dops, length(syms))
 	sizehint!(dopexps, length(syms))
-	# vindcs = map(syms) do v v in image(d2v) end
-	# vars = syms[vindcs]
-	# varexps = exps[vindcs]
-	# dops = syms[.!vindcs]
-	# dopexps = exps[.!vindcs]
 
 	for v in ordVars
 		vinds = findall(syms .== v)
@@ -361,18 +386,11 @@ function tidyup_commutatives(dopmon::DGenMon)
 		dinds = findall(syms .== v2d[v])
 		e = sum(exps[dinds])
 		if e != 0
-			push!(dops, v)
+			push!(dops, v2d[v])
 			push!(dopexps, e)
 		end
 	end
 
-	# varperm = sortperm(vars, lt=((v, u)->findfirst(ordVars .== v) < findfirst(ordVars .== u)))
-	# dopperm = sortperm(dops, lt=((v, u)->findfirst(ordVars .== d2v[v]) < findfirst(ordVars .== d2v[u])))
-
-	# vars = vars[varperm]
-	# for v in ordVars
-	# 	v in vlist || continue
-	# end
 	return DGenMon([vars; dops], [varexps; dopexps])
 end
 
