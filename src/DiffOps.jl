@@ -4,55 +4,11 @@
 const DGen = PolyVar{false}
 const DGenMon = Monomial{false}
 
-abstract type DiffOp end
-
-# struct Dgen <: DiffOp
-	# p::PolyVar{false}
-# 	v2d::Bijection{PolyVar{false}, PolyVar{false}}
-# 	p2s::Bijection{PolyVar{false}, Num}
-# end
-
-struct PolyDiffOp <: DiffOp
-	p::Polynomial{false, Rational}
-# 	v2d::Bijection{DGen, DGen}
-# 	p2s::Bijection{DGen, Num}
-
-	PolyDiffOp(p::Polynomial) = new(p)
-	PolyDiffOp(r::Real) = new(one(Polynomial{false, Rational})*convert(Rational, r))
-	PolyDiffOp(g::DGen) = new(convert(Polynomial{false, Rational}, g))
-# 	# PolyDiffOp(g::DGen, v2d, p2s) = new(convert(Polynomial{false, Rational}, g), v2d, p2s)
-end
-
-Base.print(io::IO, dop::DiffOp) = print(io, dop.p)
-Base.show(io::IO, dop::DiffOp) = show(io, dop.p)
-
-
-Base.isequal(p::PolyDiffOp, q::PolyDiffOp) = isequal(p.p, q.p)
-Base.:+(p::PolyDiffOp, q::PolyDiffOp) = PolyDiffOp(p.p + q.p)
-Base.:*(p::PolyDiffOp, q::PolyDiffOp) = PolyDiffOp(p.p * q.p) |> canonicalize
-Base.:^(p::PolyDiffOp, n::Integer) = PolyDiffOp(p.p^n) |> canonicalize
-Base.:*(p::PolyDiffOp, r::Real) = PolyDiffOp(p.p*convert(Rational, r))
-Base.:*(r::Real, p::PolyDiffOp) = PolyDiffOp(p.p*convert(Rational, r))
-
-Base.one(::Type{PolyDiffOp}) = PolyDiffOp(one(Polynomial{false, Rational}))
-Base.zero(::Type{PolyDiffOp}) = PolyDiffOp(zero(Polynomial{false, Rational}))
-# const PolyDiffOp = Polynomial{false, Rational{Int64}}
-# PolyDiffOp(p::Polynomial) = convert(PolyDiffOp, p) |> canonicalize
-# PolyDiffOp(g::DGen) = convert(PolyDiffOp, g)
-
-# Refer to construction of PolyForm in [SymbolicUtils](https://github.com/JuliaSymbolics/SymbolicUtils.jl)
-
-# let const VAR2DIFF = Bijection{DGen, DGen}(), const PV2SYM = Bijection{Dgen, Num}()
-# end
-
-# const VAR2DIFF = Ref(WeakRef(nothing))
-# const PV2SYM = Ref(WeakRef(nothing))
-
-# Use common dictionaries in all PolyDiffOp 
+# Use common dictionaries for maintaining relations: 
+# x <--> dx
+# "x" --> (x as DGen, x as Num)
 const VAR2DIFF = Bijection{DGen, DGen}()
 const NAME2SYM = OrderedDict{String, Pair{DGen, Num}}()
-# const PV2SYM = Bijection{DGen, Num}()
-# const VARORDER = Vector{DGen}()
 
 
 function get_var2diff()
@@ -74,6 +30,80 @@ function clear_dicts()
 	empty!(n2s)
 	nothing
 end
+
+function check_dicts_sanity()
+	v2d = get_var2diff()
+	n2s = get_name2sym()
+
+	for v in union(domain(v2d))
+		# if !haskey(n2s, DP.name(v))
+		# 	@assert "$(v) is not included in keys of PVAR2SYM"
+		# end
+		@assert haskey(n2s, DP.name(v)) "$(v) is not included in keys of NAME2SYM"
+	end
+	# @assert p.v2d === q.v2d "v2d mismatch"
+	# @assert p.p2s === q.p2s "v2d mismatch"
+
+	# return p.v2d, p.p2s
+	return true
+end
+
+function check_var_existence(name::AbstractString)
+	v2d = get_var2diff()
+	return check_dicts_sanity() && (name in DP.name.(domain(v2d)))
+end
+
+abstract type DiffOp end
+
+Base.print(io::IO, dop::DiffOp) = print(io, dop.p)
+Base.show(io::IO, dop::DiffOp) = show(io, dop.p)
+
+# struct Dgen <: DiffOp
+	# p::PolyVar{false}
+# 	v2d::Bijection{PolyVar{false}, PolyVar{false}}
+# 	p2s::Bijection{PolyVar{false}, Num}
+# end
+
+struct PolyDiffOp <: DiffOp
+	p::Polynomial{false, Rational}
+# 	v2d::Bijection{DGen, DGen}
+# 	p2s::Bijection{DGen, Num}
+
+	PolyDiffOp(p::Polynomial) = new(p)
+	PolyDiffOp(r::Real) = new(one(Polynomial{false, Rational})*convert(Rational, r))
+	PolyDiffOp(g::DGen) = new(convert(Polynomial{false, Rational}, g))
+# 	# PolyDiffOp(g::DGen, v2d, p2s) = new(convert(Polynomial{false, Rational}, g), v2d, p2s)
+end
+
+
+Base.isequal(p::PolyDiffOp, q::PolyDiffOp) = isequal(p.p, q.p)
+Base.:+(p::PolyDiffOp, q::PolyDiffOp) = PolyDiffOp(p.p + q.p)
+Base.:*(p::PolyDiffOp, q::PolyDiffOp) = PolyDiffOp(p.p * q.p) |> canonicalize
+Base.:^(p::PolyDiffOp, n::Integer) = PolyDiffOp(p.p^n) |> canonicalize
+Base.:*(p::PolyDiffOp, r::Real) = PolyDiffOp(p.p*convert(Rational, r))
+Base.:*(r::Real, p::PolyDiffOp) = PolyDiffOp(p.p*convert(Rational, r))
+
+Base.one(::Type{PolyDiffOp}) = PolyDiffOp(one(Polynomial{false, Rational}))
+Base.zero(::Type{PolyDiffOp}) = PolyDiffOp(zero(Polynomial{false, Rational}))
+
+# TODO: better to implement differential operators with coefficients in rational functions 
+# struct RatDiffOp <: DiffOp
+# 	p::Polynomial{false, RationalPoly{Polynomial{true, Rational}, Polynomial{true, Rational}}}
+
+# 	RatDiffOp(p::Polynomial) = new(p)
+# end
+
+# const PolyDiffOp = Polynomial{false, Rational{Int64}}
+# PolyDiffOp(p::Polynomial) = convert(PolyDiffOp, p) |> canonicalize
+# PolyDiffOp(g::DGen) = convert(PolyDiffOp, g)
+
+# Refer to construction of PolyForm in [SymbolicUtils](https://github.com/JuliaSymbolics/SymbolicUtils.jl)
+
+# let const VAR2DIFF = Bijection{DGen, DGen}(), const PV2SYM = Bijection{Dgen, Num}()
+# end
+
+# const VAR2DIFF = Ref(WeakRef(nothing))
+# const PV2SYM = Ref(WeakRef(nothing))
 # function get_varorder()
 # 	return VARORDER
 # end
@@ -100,29 +130,7 @@ end
 # 	end
 # end
 
-function check_dicts_sanity()
-	v2d = get_var2diff()
-	n2s = get_name2sym()
-
-	for v in union(domain(v2d))
-		# if !haskey(n2s, DP.name(v))
-		# 	@assert "$(v) is not included in keys of PVAR2SYM"
-		# end
-		@assert haskey(n2s, DP.name(v)) "$(v) is not included in keys of NAME2SYM"
-	end
-	# @assert p.v2d === q.v2d "v2d mismatch"
-	# @assert p.p2s === q.p2s "v2d mismatch"
-
-	# return p.v2d, p.p2s
-	return true
-end
-
-function check_var_existence(name::AbstractString)
-	v2d = get_var2diff()
-	return check_dicts_sanity() && (name in DP.name.(domain(v2d)))
-end
-
-# TOOD: differential operators with coefficients in rational functions should be implemented
+# TODO: differential operators with coefficients in rational functions should be implemented
 # const RatDiffOp = Polynomial{false, RationalPoly{Polynomial{true, Rational{T}}, Polynomial{true, Rational{T}}}} where T
 # function RatDiffOp(p::Polynomial{C, T}) where {C, T}
 # end
