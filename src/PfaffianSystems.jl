@@ -43,13 +43,14 @@ include("AsirWrapper.jl")
 export isAsirAvailable, vec2str, asir_derivative, asir_reduce, asir_fctr
 
 include("DiffOps.jl")
-export DGen, PolyDiffOp, RatDiffOp
-export genVars, addVars, apply_do, dmul, genVars2, canonicalize
-export makeTestEnvs
+export PolyDiffOp
+export genVars, addVars, apply_do, dmul, genVars2
+# export makeTestEnvs, canonicalize, RatDiffOp, DGen
 
 include("DIdeals.jl")
 export DIdeal, stdmon!, isZeroDimensional, makeTestVarsAndIdeal, apply_ideal
 export eliminationIdeal, intersectionIdeal, integrationIdeal, restrictionIdeal
+export DIdeal2, makeTestVarsAndIdeal2
 
 include("PfaffSys.jl")
 export PfaffianSystem, get_vars, get_dvars, buildFuncA, integratePf, applyStdMons, denomLCM

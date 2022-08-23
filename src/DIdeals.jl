@@ -39,6 +39,25 @@ function apply_ideal(I::DIdeal, F::Num; use_asir=false)
 	end
 end
 
+struct DIdeal2 <: AbstractIdeal
+	gens::Vector{PolyDiffOp}
+	flags::Dict{String, Union{Nothing, Bool}}
+
+	DIdeal2(gens::Vector{PolyDiffOp}) = new(copy(gens), Dict{String, Union{Nothing, Bool}}("isZeroDim"=>nothing))
+end
+
+function (I::DIdeal2)(F::Num)
+	map(I.gens) do dop
+		dop(F)
+	end
+end
+
+function makeTestVarsAndIdeal2()
+	x, dx = genVars2("x", 3)
+	# return x, dx, v2d, DIdeal([dx[1]^2 + 1, x[2]*dx[2] - 2, x[3]*dx[3] - 1], v2d)
+	return x, dx, DIdeal2([dx[1] + 2*x[1], dx[2]^2 + 1, x[3]*dx[3] - 1])
+end
+
 
 """
 	stdmon!(I::DIdeal[, ordered_vars::Vector{Num}])

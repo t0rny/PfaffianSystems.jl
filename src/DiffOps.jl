@@ -76,12 +76,22 @@ struct PolyDiffOp <: DiffOp
 end
 
 
+Base.copy(p::PolyDiffOp) = new(copy(p.p))
 Base.isequal(p::PolyDiffOp, q::PolyDiffOp) = isequal(p.p, q.p)
+
 Base.:+(p::PolyDiffOp, q::PolyDiffOp) = PolyDiffOp(p.p + q.p)
+Base.:+(p::PolyDiffOp, r::Real) = PolyDiffOp(p.p + convert(Rational, r))
+Base.:+(r::Real, q::PolyDiffOp) = PolyDiffOp(convert(Rational, r) + q.p)
+
+Base.:-(p::PolyDiffOp, q::PolyDiffOp) = PolyDiffOp(p.p - q.p)
+Base.:-(p::PolyDiffOp, r::Real) = PolyDiffOp(p.p - convert(Rational, r))
+Base.:-(r::Real, q::PolyDiffOp) = PolyDiffOp(convert(Rational, r) - q.p)
+
 Base.:*(p::PolyDiffOp, q::PolyDiffOp) = PolyDiffOp(p.p * q.p) |> canonicalize
-Base.:^(p::PolyDiffOp, n::Integer) = PolyDiffOp(p.p^n) |> canonicalize
 Base.:*(p::PolyDiffOp, r::Real) = PolyDiffOp(p.p*convert(Rational, r))
 Base.:*(r::Real, p::PolyDiffOp) = PolyDiffOp(p.p*convert(Rational, r))
+
+Base.:^(p::PolyDiffOp, n::Integer) = PolyDiffOp(p.p^n) |> canonicalize
 
 Base.one(::Type{PolyDiffOp}) = PolyDiffOp(one(Polynomial{false, Rational}))
 Base.zero(::Type{PolyDiffOp}) = PolyDiffOp(zero(Polynomial{false, Rational}))
@@ -208,7 +218,7 @@ function genVars2(name::AbstractString)
 	else
 
 		var_ex = Symbol(name)
-		symvar = @variables $var_ex
+		(symvar,) = @variables $var_ex
 
 		pvar = DGen(name)
 		pdop = DGen('d'*name)
