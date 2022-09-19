@@ -20,22 +20,24 @@ function _computePfaffSys(I::DIdeal, ordered_vars::OrderedSet{Num})
 	asir_res = asir_cmd |> runAsir |> parseAsir
 	asir_res = filter!((s)->(startswith(s, "[")), asir_res)
 
-	(length(asir_res) == 0) && return nothing
+	# (length(asir_res) == 0) && return nothing
+	try
+		vars_list = union(I.v2d.domain, I.v2d.range) |> collect
+		std_mons = evalAsir(asir_res[1], vars_list) |> reverse
 
-	# vars_list = cat(t, vars, dt, diffops; dims=1)
-	vars_list = union(I.v2d.domain, I.v2d.range) |> collect
-	std_mons = evalAsir(asir_res[1], vars_list) |> reverse
+		asir_res = asir_res[2:end]
+		m = length(std_mons)
 
-	asir_res = asir_res[2:end]
-	m = length(std_mons)
+		A = Dict{Num, Matrix{Num}}()
+		# for i = 1:n
+		for (i, v) in enumerate(ordered_vars)
+			A[v] = asir_res[m*(i-1)+1:m*i] |> reverse .|> (s->evalAsir(s, vars_list)) .|> reverse |> (s->vcat(s...))
+		end
 
-	A = Dict{Num, Matrix{Num}}()
-	# for i = 1:n
-	for (i, v) in enumerate(ordered_vars)
-		A[v] = asir_res[m*(i-1)+1:m*i] |> reverse .|> (s->evalAsir(s, vars_list)) .|> reverse |> (s->vcat(s...))
+		return PfaffianSystem(A, std_mons, copy(I.v2d))
+	catch
+		error("asir output: $(asir_res)")
 	end
-
-	return PfaffianSystem(A, std_mons, copy(I.v2d))
 	# eval(Meta.parse("intersect_tmpFunc($(vec2str(vars_list))) = $(asir_res[1])"))
 	# elimOrdGens = Base.invokelatest(intersect_tmpFunc, vars_list...)
 end
