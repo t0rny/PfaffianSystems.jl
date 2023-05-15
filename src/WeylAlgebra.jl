@@ -32,6 +32,8 @@ function Base.show(io::IO, w::WAlgElem)
 	print(io, w.elem)
 end
 
+Base.:+(x::WAlgElem, y::WAlgElem) = WAlgElem(x.elem + y.elem)
+
 
 ############################################################
 # 
