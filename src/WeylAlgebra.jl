@@ -23,17 +23,32 @@ function Base.show(io::IO, D::WeylAlgebra)
 	print(io, "WAlg(", D.WAlg, ")")
 end
 
+Base.one(D::WeylAlgebra) = WAlgElem(one(D.WAlg))
+Base.zero(D::WeylAlgebra) = WAlgElem(zero(D.WAlg))
+
+# TODO: wrapper for constant
+
 
 struct WAlgElem{T <: MPolyRingElem}
 	elem::T
 end
 
-function Base.show(io::IO, w::WAlgElem)
-	print(io, w.elem)
+function Base.show(io::IO, wae::WAlgElem)
+	print(io, wae.elem)
 end
 
 Base.:+(x::WAlgElem, y::WAlgElem) = WAlgElem(x.elem + y.elem)
+Base.:-(x::WAlgElem, y::WAlgElem) = WAlgElem(x.elem - y.elem)
+Base.one(wae::Type{WAlgElem}) = WAlgElem(one(wae.elem))
+Base.zero(wae::Type{WAlgElem}) = WAlgElem(zero(wae.elem))
 
+# TODO: multiplication of WAlgElem
+# TODO: multiplication of WAlgElem and constant
+# TODO: multiplication of WAlgElem and polynomial
+
+# TODO: coefficients of WAlgElem 
+# TODO: monomials of WAlgElem 
+# TODO: terms of WAlgElem
 
 ############################################################
 # 
