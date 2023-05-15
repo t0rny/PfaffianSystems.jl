@@ -15,12 +15,21 @@ const AA = AbstractAlgebra
 
 # WeylAlgebra{T} = MPolyRing{MPolyRingElem{T}} where T
 
-struct WeylAlgebra{T}
-	WAlg::AA.Generic.MPolyRing{AA.Generic.MPoly{T}}
+struct WeylAlgebra{T <: MPolyRing{<:MPolyRingElem}}
+	WAlg::T
+end
 
-	function WeylAlgebra{T}(D::MPolyRing{<:MPolyRingElem{T}}) where T
-		new{T}(D)
-	end
+function Base.show(io::IO, D::WeylAlgebra)
+	print(io, "WAlg(", D.WAlg, ")")
+end
+
+
+struct WAlgElem{T <: MPolyRingElem}
+	elem::T
+end
+
+function Base.show(io::IO, w::WAlgElem)
+	print(io, w.elem)
 end
 
 
@@ -37,7 +46,7 @@ end
 function weyl_algebra(F::Field, s::Vector{Symbol}, ds::Vector{Symbol}; kw...)
 	R, gens_R = polynomial_ring(F, s; kw...)
 	D, gens_D = polynomial_ring(R, ds; kw...)
-	(WeylAlgebra{elem_type(F)}(D), D.(gens_R), gens_D)
+	(WeylAlgebra(D), WAlgElem.(D.(gens_R)), WAlgElem.(gens_D))
 end
 
 function weyl_algebra(F::Field, s::AbstractVector{<:AbstractString}; kw...)
