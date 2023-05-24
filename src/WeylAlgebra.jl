@@ -39,8 +39,8 @@ end
 
 Base.:+(x::WAlgElem, y::WAlgElem) = WAlgElem(x.elem + y.elem)
 Base.:-(x::WAlgElem, y::WAlgElem) = WAlgElem(x.elem - y.elem)
-Base.one(wae::Type{WAlgElem}) = WAlgElem(one(wae.elem))
-Base.zero(wae::Type{WAlgElem}) = WAlgElem(zero(wae.elem))
+Base.one(wae::Union{Type{WAlgElem{T}}, WAlgElem{T}}) where T <: MPolyRingElem = WAlgElem(one(wae.elem))
+Base.zero(wae::Union{Type{WAlgElem{T}}, WAlgElem{T}}) where T <: MPolyRingElem = WAlgElem(zero(wae.elem))
 
 # TODO: multiplication of WAlgElem
 # TODO: multiplication of WAlgElem and constant
