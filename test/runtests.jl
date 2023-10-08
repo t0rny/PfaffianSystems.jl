@@ -7,95 +7,91 @@ using Test
     # Write your tests here.
 end
 
-using PfaffianSystems: makeTestVarsAndIdeal
+# using PfaffianSystems: makeTestVarsAndIdeal
 
-using Symbolics: @variables
-@testset "AsirWrapper.jl" begin
-    x, dx, var2do = genVars("x", 3)
-    @variables y[1:2]::Rational
-    os = OrderedSet((x[2], x[1]))
+using AbstractAlgebra: QQ
 
-    @test !isnothing(isAsirAvailable())
-    @test vec2str(x) == "x1,x2,x3"
-    @test vec2str(y) == "y1,y2"
-    @test vec2str(os) == "x2,x1"
-    @test isequal(asir_derivative(x[1]*sin(x[2]), x[2]), x[1]*cos(x[2]))
-    @test isequal(asir_derivative([x[1]*exp(x[2]), x[3]*x[2]^2], x[2]), [x[1]*exp(x[2]), 2*x[3]*x[2]])
-    @test isequal(asir_reduce((x[1]^2 - x[2]^2)/(x[1] + x[2])), x[1] - x[2])
-    @test isequal(asir_reduce([(x[1]^2 - x[2]^2)/(x[1] + x[2]), (sin(x[1])*x[2] + x[2]^2)/x[2]]), [x[1] - x[2], sin(x[1]) + x[2]])
-    a = (x[1]-1)^2*(x[2] - x[3])^3
-    @test isequal(asir_fctr(a), [-1=>1, x[1]-1=>2, x[3]-x[2]=>3])
+@testset "WeylAlgebra.jl" begin
+    @test_nowarn weyl_algebra("x")      # generate 1-d Weyl algebra
+    D, x, dx = weyl_algebra("x")
+    @test isequal(x*x, x^2)             # power of variable
+    @test isequal(dx*x, x*dx+1)         # Leibniz rule
+    @test isequal(dx*dx, dx^2)          # power of derivative
+    @test isequal(x^2*x, x*x^2)         # commutativity between product and power
+    @test isequal((x*dx)*x, x*(dx*x))   # associativity of product
+
+    @test_nowarn weyl_algebra(["x","y"]) # generate 2-d Weyl algebra
+    D, (x,y), (dx,dy) = weyl_algebra(["x","y"])
+    @test isequal(vars(x*dx*dy), vars(x))
+    @test isequal(dvars(x*y*dx), dvars(dx))
+    @test isequal(vars(x*y*dx), vars(x + y))
+    @test isequal(dvars(x*dx*dy), dvars(dx + dy))
+
+    @test isequal(x*y, y*x)     # commutativity of variables
+    @test isequal(dx*dy, dy*dx) # commutativity of derivatives
+    @test isequal(y*dx, dx*y)   # commutativity of variables and derivatives 
+    @test isequal(x*(y + dy), x*y + x*dy) # distributivity of product with variables over sum
+    @test isequal(dx*(x + y), dx*x + dx*y) # distributivity of product with derivatives over sum
 end
 
-@testset "DiffOps.jl" begin
-    x, dx, var2do = genVars("x", 3)
-    @test length(x) == length(dx) == length(var2do) == 3
-    @test map(s->haskey(var2do, s), x) |> all
-    @test map(s->haskey(inv(var2do), s), dx) |> all
+@testset "DiffOpRing.jl" begin
+    @test_nowarn diff_op_ring("x")      # generate 1-d Weyl algebra
+    D, x, dx = diff_op_ring("x")
+    @test isequal(x*x, x^2)             # power of variable
+    @test isequal(dx*x, x*dx+1)         # Leibniz rule
+    @test isequal(dx*dx, dx^2)          # power of derivative
+    @test isequal(x^2*x, x*x^2)         # commutativity between product and power
+    @test isequal((x*dx)*x, x*(dx*x))   # associativity of product
 
-    y, dy, var2do = addVars("y", var2do)
-    @test length(var2do) == 4
-    @test haskey(var2do, y)
-    @test haskey(inv(var2do), dy)
+    @test_nowarn diff_op_ring(["x","y"]) # generate 2-d Weyl algebra
+    D, (x,y), (dx,dy) = diff_op_ring(["x","y"])
+    @test isequal(vars(x*dx*dy), vars(x))
+    @test isequal(dvars(x*y*dx), dvars(dx))
+    @test isequal(vars(x*y*dx), vars(x + y))
+    @test isequal(dvars(x*dx*dy), dvars(dx + dy))
 
-    @test apply_do(dx[1], x[1], var2do) == 1
-    @test apply_do(dx[2]^2 + 1, sin(x[2]), var2do) == 0
-    @test isequal(apply_do(x[2], x[1], var2do), x[1]*x[2])
-    @test isequal(apply_do(2.0, x[1], var2do), 2.0*x[1])
-    @test isequal(apply_do(3, x[1], var2do), 3*x[1])
-
-    @test apply_do(dx[1], x[1], var2do; use_asir=true) == 1
-    @test apply_do(dx[2]^2 + 1, sin(x[2]), var2do; use_asir=true) == 0
-    @test isequal(apply_do(x[2], x[1], var2do; use_asir=true), x[1]*x[2])
-    @test isequal(apply_do(2.0, x[1], var2do; use_asir=true), 2.0*x[1])
-    @test isequal(apply_do(3, x[1], var2do; use_asir=true), 3*x[1])
-
-    @test isequal(dmul(dx[2], 1, var2do), dx[2])
-    @test isequal(dmul(1, x[1], var2do), x[1])
-    @test isequal(dmul(dx[2], x[3]^2, var2do), dx[2]*x[3]^2)
-    @test isequal(dmul(dx[2], x[2]*dx[1], var2do), dx[1] + dx[1]*dx[2]*x[2])
-    @test isequal(dmul(dx[2], (x[2]^2 + 2*x[1])*dx[1], var2do), (x[2]^2 + 2*x[1])*dx[1]*dx[2] + 2*x[2]*dx[1])
+    @test isequal(x*y, y*x)     # commutativity of variables
+    @test isequal(dx*dy, dy*dx) # commutativity of derivatives
+    @test isequal(y*dx, dx*y)   # commutativity of variables and derivatives 
+    @test isequal(x*(y + dy), x*y + x*dy) # distributivity of product with variables over sum
+    @test isequal(dx*(x + y), dx*x + dx*y) # distributivity of product with derivatives over sum
+    @test isequal((x+dx)//y, x//y + dx//y) # distributivity of division
+    @test isequal((x+dx)*y^-1, x//y + dx//y) # distributivity of division
+    @test isequal(x//x, one(D)) # reduction
 end
 
-@testset "DIdeals.jl" begin
-    x, dx, var2do, I = @test_nowarn makeTestVarsAndIdeal()
-    b = exp(-x[1]^2)*sin(x[2])*x[3]
-    y, dy, var2do = addVars("y", 2, var2do)
-    J = DIdeal([dx[1]^2 + 1, x[2]*dy[2] - 2], var2do)
-    @test isequal(stdmon!(I, OrderedSet(x)), [dx[2], 1])
-    @test isZeroDimensional(I)
-    @test !isZeroDimensional(J)
-    I3 = eliminationIdeal(I, x[1:2])
-    @test isequal(I3.gens, [x[3]*dx[3] - 1])
-    @test isequal(I3.v2d, Bijection(x[3], dx[3]))
-    @test_nowarn intersectionIdeal(I, J)
-    @test_nowarn integrationIdeal(I, x[1:1])
-    # @test_nowarn integrationIdeal(I, x[1:1])
-    # @test integrationIdeal(I, x[3:3]) |> isnothing
-    @test_nowarn restrictionIdeal(I, x[1:1])
-    @test isequal(apply_ideal(I, b), [0, 0, 0])
+@testset "Coersion" begin
+    D1, x, dx = weyl_algebra("x")
+    R1, X, dX = diff_op_ring("x")
+    D2, (x1, x2), (dx1, dx2) = weyl_algebra(["x", "y"])
+    R2, (X1, X2), (dX1, dX2) = diff_op_ring(["x", "y"])
+
+    @test isequal(coerce(dx*x+1, D2) |> parent, D2)
+    @test isequal(coerce(dX*X+1, R2) |> parent, R2)    
+    @test isequal(coerce(dx*x+1, R1) |> parent, R1)    
+    @test isequal(coerce(dx1*x1+dx2*x2, R2) |> parent, R2)
 end
 
-@testset "PfaffSys.jl" begin
-    x, dx, var2do, I = makeTestVarsAndIdeal()
-    pf = @test_nowarn PfaffianSystem(I)
-    @test isequal(get_vars(pf), x)
-    @test isequal(get_dvars(pf), dx)
-    funcAs, vars = @test_nowarn buildFuncA(pf)
-    x_bar = [0, 2, 1]
-    @test funcAs[1](x_bar) == [0 0; 0 0]
-    @test funcAs[2](x_bar) == [0 1; -1 0]
-    @test funcAs[3](x_bar) == [1 0; 0 1]
-    # @test_nowarn integrate(pf, [1 0; 0 1], [1, 1, 1], [3, 2, 1])
-    @test_nowarn integratePf(pf, [1 0; 0 1], Dict(x[1]=>1, x[2]=>1, x[3]=>1), Dict(x[1]=>3, x[2]=>2, x[3]=>1))
-    # @test_nowarn integrate(pf, [1 0; 0 1], cat([[cos(0.1*t), sin(0.1*t), 1+0.1*t] for t = 1:10]...; dims=2)) 
-    @test_nowarn integratePf(pf, [1 0; 0 1], 
-    Dict(
-        x[1]=>[cos(0.1*t) for t = 1:10], 
-        x[2]=>[sin(0.1*t) for t = 1:10],
-        x[3]=>[1+0.1*t for t = 1:10]
-        ) 
-    )
-    @test isequal(applyStdMons(pf, cos(x[2])), [cos(x[2]); -sin(x[2])])
-    @test isequal(denomLCM(pf), x[3])
+@testset "DiffOpRings.jl" begin
+    D, (x,y,z), (dx,dy,dz) = diff_op_ring(["x","y","z"])
+
+    # r is equalt to 0
+    f = dx*dy^3
+    g = [x*dy+1, dx]
+    r, q = normalform(f, g)
+    @test isequal(f, q[1] * g[1] + q[2] * g[2] + r)
+
+    # r is not equal to 0 and q[1] includes a non-constant coefficient
+    f = dx*dy^3
+    g = [x*dy+1, dx]
+    r, q = normalform(f, g)
+    @test isequal(f, q[1] * g[1] + q[2] * g[2] + r)
+
+    # Example 6.1.6 in [N. Takayama, ``Chapter 6: Grobner Basis for Rings of Differnetial Operators and Applications,'', Grobner Bases, Hibi eds., Springer, 2013]
+    f = dx*dy^3
+    g = [dx*dy+1, 2*y*dy^2-dx+3*dy+2*x]
+    r , q =  normalform(f, g)
+    @test isequal(f, q[1] * g[1] + q[2] * g[2] + r)
 end
+
+

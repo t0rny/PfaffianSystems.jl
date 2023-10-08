@@ -1,20 +1,17 @@
 name = "PfaffianSystems"
 uuid = "a14c201b-6a82-4f68-ae30-f837676bba5b"
 authors = ["t0rny"]
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
+AbstractAlgebra = "c3fe647b-3220-5bb0-a1ea-a7954cac585d"
 Bijections = "e2ed5e7c-b2de-5872-ae92-c73ca462fb04"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
-DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
-DynamicPolynomials = "7c1d4256-1411-5781-91ec-d7bc3513ac07"
 Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
-SymbolicUtils = "d1185830-fcd6-423d-90d6-eec64667417b"
-Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 
 [compat]
-julia = "1.7"
+julia = "1.9"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
