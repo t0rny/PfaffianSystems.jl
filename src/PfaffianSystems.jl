@@ -1,7 +1,7 @@
 module PfaffianSystems
 
 import Base: sort, ==, hash, parent
-import AbstractAlgebra: nvars, gens, base_ring, derivative, vars, coefficients, monomials, exponent_vectors, elem_type
+import AbstractAlgebra: nvars, gens, base_ring, derivative, vars, coefficients, monomials, exponent_vectors, elem_type, evaluate
 
 using Bijections
 using DataStructures: OrderedSet
@@ -24,7 +24,7 @@ include("AsirWrapper.jl")
 export isAsirAvailable, vec2str, asir_derivative, asir_reduce, asir_fctr
 
 include("DiffOps.jl")
-export gens, dgens, base_ring, nvars, vars, dvars 
+export gens, dgens, base_ring, nvars, vars, dvars, evaluate
 
 include("WeylAlgebra.jl")
 export weyl_algebra, coerce, elem_type

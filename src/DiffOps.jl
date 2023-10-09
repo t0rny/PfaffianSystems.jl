@@ -108,6 +108,9 @@ function dvars(wae::T) where T <: AbstractDiffOp
     return re_wae_dvars 
 end
 
+# TODO: implement evaluation
+# evaluate(dop::T, vals::Vector{T}) where T <: AbstractDiffOp = T(parent(dop), evaluate(unwrap(dop), unwrap.(vals)))
+# evaluate(dop::T, vars::Vector{T}, vals::Vector{T}) where T <: AbstractDiffOp = T(parent(dop), evaluate(unwrap(dop), unwrap.(vars), unwrap.(vals)))
 
 ############################################################
 # 
