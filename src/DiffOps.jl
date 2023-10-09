@@ -115,6 +115,8 @@ end
 # 
 ############################################################
 
+Base.:-(x::T) where T <: AbstractDiffOp = T(parent(x), -unwrap(x))
+
 Base.:(==)(x::T, y::T) where T <: AbstractDiffOp  = unwrap(x) == unwrap(y)
 Base.hash(x::T, h::UInt) where T <: AbstractDiffOp = hash(unwrap(x), h)
 
