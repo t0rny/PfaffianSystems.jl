@@ -94,7 +94,8 @@ function dvars(wae::T) where T <: AbstractDiffOp
     return re_wae_dvars 
 end
 
-isvar(dop::T) where T <: AbstractDiffOp = dop in gens(dop)
+isvar(dop::T) where T <: AbstractDiffOp = dop in gens(parent(dop))
+isdvar(dop::T) where T <: AbstractDiffOp = dop in dgens(parent(dop))
 
 # TODO: implement evaluation
 # evaluate(dop::T, vals::Vector{T}) where T <: AbstractDiffOp = T(parent(dop), evaluate(unwrap(dop), unwrap.(vals)))

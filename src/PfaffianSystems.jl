@@ -24,7 +24,7 @@ include("AsirWrapper.jl")
 export isAsirAvailable, vec2str, asir_derivative, asir_reduce, asir_fctr
 
 include("DiffOps.jl")
-export gens, dgens, base_ring, nvars, vars, dvars, evaluate
+export gens, dgens, base_ring, nvars, vars, dvars, isvar, isdvar, evaluate
 
 include("WeylAlgebra.jl")
 export weyl_algebra, coerce, elem_type

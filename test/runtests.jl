@@ -11,6 +11,25 @@ end
 
 using AbstractAlgebra: QQ
 
+@testset "DiffOps.jl" begin
+    D, (x, y), (dx, dy) = weyl_algebra(["x", "y"])
+
+    @test isequal(gens(D), [x, y])          # gens
+    @test isequal(dgens(D), [dx, dy])       # gens
+
+    @test isequal(vars(x*dx+y^2), [x, y])   # vars
+    @test isequal(vars(dx+dy^2), [])        # vars with no var
+    @test isequal(dvars(x*dx+y^2), [dx])    # dvars
+    @test isequal(dvars(x^2+y^2), [])       # dvars with no dvar
+
+    @test isvar(x)          # isvar
+    @test !isvar(dx)        # isvar with dvar
+    @test !isvar(x + dx)    # isvar with differential operator
+    @test isdvar(dx)        # isdvar
+    @test !isdvar(x)        # isdvar with var
+    @test !isdvar(x + dx)    # isdvar with differential operator
+end
+
 @testset "WeylAlgebra.jl" begin
     @test_nowarn weyl_algebra("x")      # generate 1-d Weyl algebra
     D, x, dx = weyl_algebra("x")
