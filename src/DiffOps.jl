@@ -101,6 +101,31 @@ isdvar(dop::T) where T <: AbstractDiffOp = dop in dgens(parent(dop))
 # evaluate(dop::T, vals::Vector{T}) where T <: AbstractDiffOp = T(parent(dop), evaluate(unwrap(dop), unwrap.(vals)))
 # evaluate(dop::T, vars::Vector{T}, vals::Vector{T}) where T <: AbstractDiffOp = T(parent(dop), evaluate(unwrap(dop), unwrap.(vars), unwrap.(vals)))
 
+function evaluate(dop::T, vars::Vector{T}, vals::Vector{T}) where T <: AbstractDiffOp
+    coefs = coefficients(unwrap(dop))
+    mons = monomials(unwrap(dop))
+
+    for (var, val) in zip(vars, vals)
+        if isvar(var)
+            !isvar(val) && throw(DomainError("The value of $var must be a variable"))
+
+            unwrap_var = coefficients(unwrap(var))[0]
+            unwrap_val = coefficients(unwrap(val))[0]
+            coefs = [evaluate(c, [unwrap_var], [unwrap_val]) for c in coefs]
+
+        elseif isdvar(var)
+            !isdvar(val) && throw(DomeinError("The value of $var must be a differential operator"))
+
+            unwrap_var = unwrap(var)
+            unwrap_val = unwrap(val)
+            mons = [evaluate(m, [unwrap_var], [unwrap_val]) for m in mons]
+        else
+            throw(DomainError("The target should be one of the variables or differential operators"))
+        end
+    end
+
+end
+
 ############################################################
 # 
 # Common arithmetic operations for differential operators
