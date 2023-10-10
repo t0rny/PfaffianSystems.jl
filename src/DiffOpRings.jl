@@ -196,7 +196,7 @@ function leading_term(f::DORElem, order::Symbol=:lex)
     elseif order == :grevlex
         exp_sum = [sum(i) for i in exponent_vectors(f)]
         exp_max = findall(x->x==maximum(exp_sum), exp_sum)
-        for i in 1:size(dgens(f))[1]
+        for i in 1:size(dgens(parent(f)))[1]
             for j in exp_max
                 # exponent_vectors(f)[j][]
 
@@ -253,7 +253,7 @@ function wnormalform(f::T, G::Vector{T}) where T<: DORElem
                 reducible = true
                 q_mon = one(parent(f))
                 for j = 1:n
-                    q_mon *= dgens(f)[j] ^ a[j]
+                    q_mon *= dgens(parent(f))[j] ^ a[j]
                 end
                 q[i] = DORElem(parent(f), unwrap(q[i]) + lc_r // lc_g  * unwrap(q_mon))
                 r = r - DORElem(parent(f), lc_r // lc_g  * unwrap(q_mon)) * g
@@ -281,7 +281,7 @@ julia> pfaffian_system([dx^2 + 1, dy^2 + 1], [one(dx), dx, dy])
 function pfaffian_system(G::Vector{T}, S::Vector{T}) where T <: DORElem
 
     R = base_ring(parent(S[1]))
-    dops = dgens(S[1])
+    dops = dgens(parent(S[1]))
     n = size(dops)[1]
     d = size(S)[1]
 

@@ -7,8 +7,8 @@
 unwrap(wae::T) where T <: AbstractDiffOp = wae.elem
 
 Base.parent(wae::T) where T <: AbstractDiffOp = wae.parent
-gens(wae::T) where T <: AbstractDiffOp = wae |> parent |> gens
-dgens(wae::T) where T <: AbstractDiffOp = wae |> parent |> dgens
+# gens(wae::T) where T <: AbstractDiffOp = wae |> parent |> gens
+# dgens(wae::T) where T <: AbstractDiffOp = wae |> parent |> dgens
 
 function Base.show(io::IO, wae::T) where T <: AbstractDiffOp
     show(io, unwrap(wae))
@@ -57,7 +57,7 @@ function vars(wae::T) where T<: AbstractDiffOp
     wae_vars = collect(set)
     
     re_wae_vars = Vector{typeof(wae)}()
-    for i in gens(wae)
+    for i in gens(parent(wae))
         if i in wae_vars
             push!(re_wae_vars, i)
         end
@@ -79,14 +79,13 @@ julia> dvars(dx^2+y)
 1-element Vector{PfaffianSystems.WAlgElem{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.Generic.MPoly{Rational{BigInt}}}}}:
  dx
 ```
-
 """
 function dvars(wae::T) where T <: AbstractDiffOp
     v = vars(unwrap(wae))
     wae_dvars = collect(Set(v .|> (s->T(parent(wae), s))))
 
     re_wae_dvars = Vector{typeof(wae)}()
-    for i in dgens(wae)
+    for i in dgens(parent(wae))
         if i in wae_dvars
             push!(re_wae_dvars, i)
         end
@@ -94,6 +93,8 @@ function dvars(wae::T) where T <: AbstractDiffOp
 
     return re_wae_dvars 
 end
+
+isvar(dop::T) where T <: AbstractDiffOp = dop in gens(dop)
 
 # TODO: implement evaluation
 # evaluate(dop::T, vals::Vector{T}) where T <: AbstractDiffOp = T(parent(dop), evaluate(unwrap(dop), unwrap.(vals)))
