@@ -37,17 +37,11 @@ end
 
 ```jldoctest
 julia> D, (x, y), (dx, dy) = weyl_algebra(["x", "y"])
+(2-d Weyl algebra in [x,y], PfaffianSystems.WAlgElem{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.Generic.MPoly{Rational{BigInt}}}}[x, y], PfaffianSystems.WAlgElem{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.Generic.MPoly{Rational{BigInt}}}}[dx, dy])
 julia> vars(x+y)
 2-element Vector{PfaffianSystems.WAlgElem{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.Generic.MPoly{Rational{BigInt}}}}}:
  x
  y
-
-julia> R, (x, y), (dx, dy) = diff_op_ring(["x", "y"])
-julia> vars(x+y)
-2-element Vector{PfaffianSystems.DORElem{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.Generic.RationalFunctionFieldElem{Rational{BigInt}, AbstractAlgebra.Generic.MPoly{Rational{BigInt}}}}}}:
- x
- y
-
 ```
 """
 function vars(wae::T) where T<: AbstractDiffOp
@@ -80,17 +74,10 @@ end
 
 ```jldoctest
 julia> D, (x, y), (dx, dy) = weyl_algebra(["x", "y"])
-julia> dvars(dx+dy)
-2-element Vector{PfaffianSystems.WAlgElem{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.Generic.MPoly{Rational{BigInt}}}}}:
+(2-d Weyl algebra in [x,y], PfaffianSystems.WAlgElem{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.Generic.MPoly{Rational{BigInt}}}}[x, y], PfaffianSystems.WAlgElem{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.Generic.MPoly{Rational{BigInt}}}}[dx, dy])
+julia> dvars(dx^2+y)
+1-element Vector{PfaffianSystems.WAlgElem{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.Generic.MPoly{Rational{BigInt}}}}}:
  dx
- dy
-
-julia> R, (x, y), (dx, dy) = diff_op_ring(["x", "y"])
-julia> dvars(dx+dy)
-2-element Vector{PfaffianSystems.DORElem{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.Generic.RationalFunctionFieldElem{Rational{BigInt}, AbstractAlgebra.Generic.MPoly{Rational{BigInt}}}}}}:
- dx
- dy
-
 ```
 
 """
