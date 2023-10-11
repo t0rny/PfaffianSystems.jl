@@ -28,6 +28,8 @@ using AbstractAlgebra: QQ
     @test isdvar(dx)        # isdvar
     @test !isdvar(x)        # isdvar with var
     @test !isdvar(x + dx)    # isdvar with differential operator
+
+    @test isequal(evaluate(x*y + dx*dy, [x, dx], [y, dy]), y^2 + dy^2)  # evaluate
 end
 
 @testset "WeylAlgebra.jl" begin
