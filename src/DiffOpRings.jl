@@ -272,6 +272,7 @@ end
 
 ```jldoctest
 julia> R, (x, y), (dx, dy) = diff_op_ring(["x", "y"])
+(2-dimensional ring of differential opeartors in [x,y], PfaffianSystems.DORElem{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.Generic.RationalFunctionFieldElem{Rational{BigInt}, AbstractAlgebra.Generic.MPoly{Rational{BigInt}}}}}[x, y], PfaffianSystems.DORElem{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.Generic.RationalFunctionFieldElem{Rational{BigInt}, AbstractAlgebra.Generic.MPoly{Rational{BigInt}}}}}[dx, dy])
 julia> pfaffian_system([dx^2 + 1, dy^2 + 1], [one(dx), dx, dy])
 2-element Vector{Matrix{AbstractAlgebra.Generic.RationalFunctionFieldElem{Rational{BigInt}, AbstractAlgebra.Generic.MPoly{Rational{BigInt}}}}}:
  [0 1 0; -1 0 0; 0 0 0]
