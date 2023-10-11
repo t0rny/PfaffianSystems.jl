@@ -97,10 +97,22 @@ end
 isvar(dop::T) where T <: AbstractDiffOp = dop in gens(parent(dop))
 isdvar(dop::T) where T <: AbstractDiffOp = dop in dgens(parent(dop))
 
-# TODO: implement evaluation
-# evaluate(dop::T, vals::Vector{T}) where T <: AbstractDiffOp = T(parent(dop), evaluate(unwrap(dop), unwrap.(vals)))
-# evaluate(dop::T, vars::Vector{T}, vals::Vector{T}) where T <: AbstractDiffOp = T(parent(dop), evaluate(unwrap(dop), unwrap.(vars), unwrap.(vals)))
+"""
 
+    evaluate(dop::T, vars::Vector{T}, vals::Vector{T}) where T <: AbstractDiffOp
+
+Evaluate a differential operator with respect to a set of variables and their corresponding values.
+
+Arguments:
+- `dop::T`: A differential operator to evaluate.
+- `vars::Vector{T}`: A vector of variables to evaluate the differential operator with respect to.
+- `vals::Vector{T}`: A vector of values corresponding to the variables.
+
+Returns:
+- An instance of `T` representing the result of evaluating the differential operator.
+
+The `vars` and `vals` vectors must have the same length, and each element in `vars` must be of the same type as its corresponding element in `vals`.
+"""
 function evaluate(dop::T, vars::Vector{T}, vals::Vector{T}) where T <: AbstractDiffOp
     coefs = coefficients(unwrap(dop)) |> collect
     mons = monomials(unwrap(dop)) |> collect
@@ -239,8 +251,32 @@ function derivative(f::RatFuncElem ,x::RatFuncElem)
     return ret_dop
 end
 
+"""
+
+    coefficients(f::T) where T <: AbstractDiffOp
+
+Extract the coefficients of a differential operator.
+
+Arguments:
+- `f::T`: A differential operator to extract the coefficients from.
+
+Returns:
+- An array of instances of `T` representing the coefficients of the differential operator.
+"""
 coefficients(f::T) where T <: AbstractDiffOp = f |> unwrap |> coefficients |> collect
 
+"""
+
+    monomials(f::T) where T <: AbstractDiffOp
+
+Extract the monomials of a differential operator.
+
+Arguments:
+- `f::T`: A differential operator to extract the monomials from.
+
+Returns:
+- An array of instances of `T` representing the monomials of the differential operator.
+"""
 function monomials(f::T) where T <: AbstractDiffOp
 
     f_mons = f |> unwrap |> monomials |> collect
@@ -249,5 +285,17 @@ function monomials(f::T) where T <: AbstractDiffOp
     return f_mons
 end
 
+"""
+
+    exponent_vectors(f::T) where T <: AbstractDiffOp
+
+Extract the exponent vectors of a differential operator.
+
+Arguments:
+- `f::T`: A differential operator to extract the exponent vectors from.
+
+Returns:
+- An array of arrays representing the exponent vectors of the differential operator.
+"""
 exponent_vectors(f::T) where T <: AbstractDiffOp = f |> unwrap |> exponent_vectors |> collect
         
