@@ -102,28 +102,36 @@ isdvar(dop::T) where T <: AbstractDiffOp = dop in dgens(parent(dop))
 # evaluate(dop::T, vars::Vector{T}, vals::Vector{T}) where T <: AbstractDiffOp = T(parent(dop), evaluate(unwrap(dop), unwrap.(vars), unwrap.(vals)))
 
 function evaluate(dop::T, vars::Vector{T}, vals::Vector{T}) where T <: AbstractDiffOp
-    coefs = coefficients(unwrap(dop))
-    mons = monomials(unwrap(dop))
+    coefs = coefficients(unwrap(dop)) |> collect
+    mons = monomials(unwrap(dop)) |> collect
+    m_ring = parent(mons[1])
+
+    v_pairs = [Vector{typeof(coefs[1])}(undef, 0), Vector{typeof(coefs[1])}(undef, 0)]
+    dv_pairs = [Vector{typeof(mons[1])}(undef, 0), Vector{typeof(mons[1])}(undef, 0)]
+
+    v2c(v) = collect(coefficients(unwrap(v)))[1] 
+    v2m(v) = unwrap(v)
 
     for (var, val) in zip(vars, vals)
-        if isvar(var)
-            !isvar(val) && throw(DomainError("The value of $var must be a variable"))
-
-            unwrap_var = coefficients(unwrap(var))[0]
-            unwrap_val = coefficients(unwrap(val))[0]
-            coefs = [evaluate(c, [unwrap_var], [unwrap_val]) for c in coefs]
-
-        elseif isdvar(var)
-            !isdvar(val) && throw(DomeinError("The value of $var must be a differential operator"))
-
-            unwrap_var = unwrap(var)
-            unwrap_val = unwrap(val)
-            mons = [evaluate(m, [unwrap_var], [unwrap_val]) for m in mons]
+        if isvar(var) && isvar(val) 
+            push!(v_pairs[1], v2c(var))
+            push!(v_pairs[2], v2c(val))
+        elseif isdvar(var) && isdvar(val) 
+            push!(dv_pairs[1], v2m(var))
+            push!(dv_pairs[2], v2m(val))
         else
-            throw(DomainError("The target should be one of the variables or differential operators"))
+            throw(DomainError("The type of $var and $val must be  the same"))
         end
     end
 
+    if length(v_pairs) > 0 
+        coefs = [evaluate(c, v_pairs[1], v_pairs[2]) for c in coefs]
+    end
+    if length(dv_pairs) > 0 
+        mons = [evaluate(m, dv_pairs[1], dv_pairs[2]) for m in mons]
+    end
+
+    return T(parent(dop), sum([m_ring(c)*m for (c, m) in zip(coefs, mons)]))
 end
 
 ############################################################
