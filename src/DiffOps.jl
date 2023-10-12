@@ -103,17 +103,25 @@ isdvar(dop::T) where T <: AbstractDiffOp = dop in dgens(parent(dop))
 
 Evaluate a differential operator with respect to a set of variables and their corresponding values.
 
-Arguments:
+# Arguments
 - `dop::T`: A differential operator to evaluate.
 - `vars::Vector{T}`: A vector of variables to evaluate the differential operator with respect to.
 - `vals::Vector{T}`: A vector of values corresponding to the variables.
 
-Returns:
+# Returns
 - An instance of `T` representing the result of evaluating the differential operator.
 
 The `vars` and `vals` vectors must have the same length, and each element in `vars` must be of the same type as its corresponding element in `vals`.
+
+# Examples
+julia> D, (x, y), (dx, dy) = weyl_algebra(["x", "y"])
+(2-d Weyl algebra in [x,y], PfaffianSystems.WAlgElem{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.Generic.MPoly{Rational{BigInt}}}}[x, y], PfaffianSystems.WAlgElem{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.Generic.MPoly{Rational{BigInt}}}}[dx, dy])
+julia> evaluate(x*dx+y, [x], [x + y])
+(x + y)*dx + y
+julia> evaluate(x*dx + y, [dx], [dx+dy])
+x*dx + x*dy + y
 """
-function evaluate(dop::T, vars::Vector{T}, vals::Vector{T}) where T <: AbstractDiffOp
+function evaluate(dop::T, vrs::Vector{T}, vls::Vector{T}) where T <: AbstractDiffOp
     coefs = coefficients(unwrap(dop)) |> collect
     mons = monomials(unwrap(dop)) |> collect
     m_ring = parent(mons[1])
@@ -124,15 +132,20 @@ function evaluate(dop::T, vars::Vector{T}, vals::Vector{T}) where T <: AbstractD
     v2c(v) = collect(coefficients(unwrap(v)))[1] 
     v2m(v) = unwrap(v)
 
-    for (var, val) in zip(vars, vals)
-        if isvar(var) && isvar(val) 
+
+    for (var, val) in zip(vrs, vls)
+        if isvar(var) &&  isempty(dvars(val))
             push!(v_pairs[1], v2c(var))
             push!(v_pairs[2], v2c(val))
-        elseif isdvar(var) && isdvar(val) 
+        elseif isdvar(var) && isempty(vars(val)) 
             push!(dv_pairs[1], v2m(var))
             push!(dv_pairs[2], v2m(val))
         else
-            throw(DomainError("The type of $var and $val must be  the same"))
+            if isvar(var)
+                throw(DomainError("$var is variable while $val contains differential operator"))
+            else
+                throw(DomainError("$var is differential operator while $val contains variable"))
+            end
         end
     end
 

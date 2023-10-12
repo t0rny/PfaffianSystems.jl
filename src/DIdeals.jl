@@ -223,8 +223,11 @@ function multiplication_DIdeal(I::DIdeal{T}, J::DIdeal{T}) where T <: WAlgElem
 	dos = dvall[1:nvars(D)]
 	vs_dummy = vall[nvars(D)+1:end]
 	dos_dummy = dvall[nvars(D)+1:end]
-	I2 = evaluate(D2(I), dos, [dos .+ dos_dummy])
-	J2 = evaluate(D2(J2), [vs; dos], [vs .- vs_dummy; -dos_dummy])
+
+	Igens = [evaluate(g, dos, dos .+ dos_dummy) for g in gens(D2(I))]
+	Igens = vcat(Igens, [evaluate(g, [vs; dos], [vs .- vs_dummy; -dos_dummy]) for g in gens(D2(J))])
+
+	return restriction_DIdeal(DIdeal(D2, Igens), vs_dummy)
 end
 
 """
