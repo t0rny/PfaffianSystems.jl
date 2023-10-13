@@ -153,8 +153,6 @@ function restriction_DIdeal(I::DIdeal{T}, rest_vars::OrderedSet{T}) where T <: W
 	GB;
 	"""
 
-	@show asir_cmd
-
 	asir_res = asir_cmd |> runAsir |> parseAsir
 	asir_res = filter!((s)->(startswith(s, "[")), asir_res)
 
@@ -251,17 +249,6 @@ function multiplication_DIdeal(I::DIdeal{T}, J::DIdeal{T}) where T <: WAlgElem
 
 	Igens = [evaluate(g, dos, dos .+ dos_dummy) for g in gens(D2(I))]
 	Jgens = [evaluate(g, [vs_dummy; dos_dummy], [vs .- vs_dummy; -dos_dummy]) for g in Jgens]
-
-	# Igens = vcat(Igens, [evaluate(g, [vs; dos], [vs .- vs_dummy; -dos_dummy]) for g in gens(D2(J))])
-
-	@show vs
-	@show dos
-
-	@show vs_dummy
-	@show dos_dummy
-
-	@show Igens
-	@show Jgens
 
 	return restriction_DIdeal(DIdeal(D2, [Igens; Jgens]), vs_dummy) |> D
 end

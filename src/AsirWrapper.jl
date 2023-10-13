@@ -96,11 +96,12 @@ end
 Evaluate `asir_res` as a Julia expression.
 """
 function evalAsir(asir_res::AbstractString, vars_list::Vector{T}) where T <: AbstractDiffOp 
-	tmpExpr = Meta.parse("asir_tmpFunc($(vars_list .|> unwrap |> vec2str)) = $(asir_res)")
+	tmpExpr = Meta.parse("asir_tmpFunc($(vars_list |> vec2str)) = $(asir_res)")
 	try
 		eval(tmpExpr)
 	catch
 		@assert false "Error: somthing wrong in evaluating $(asir_res)"
 	end
-	return (@invokelatest asir_tmpFunc(vars_list...))
+
+	return parent(vars_list[1]).(@invokelatest asir_tmpFunc(unwrap.(vars_list)...))
 end
