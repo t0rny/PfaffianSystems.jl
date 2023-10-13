@@ -18,10 +18,14 @@ mutable struct DIdeal{T <: AbstractDiffOp} <: Ideal{T}
     end 
 end
 
-function DIdeal(R::AbstractDORing, gens::Vector{T}) where T <: AbstractDiffOp
-    DIdeal{eltype(gens)}(R, gens)
+# function DIdeal(R::AbstractDORing, gens::Vector{T}) where T <: AbstractDiffOp
+#     DIdeal{eltype(gens)}(R, gens)
+# end
+function DIdeal(R::AbstractDORing, gens::Vector)
+		DIdeal{elem_type(R)}(R, R.(gens))
 end
 DIdeal(gens::Vector{T}) where T <: AbstractDiffOp = DIdeal(parent(gens[1]), gens)
+
 
 base_ring(I::DIdeal) = I.base_ring
 gens(I::DIdeal) = I.gens
