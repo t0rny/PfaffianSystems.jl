@@ -20,6 +20,10 @@ struct WeylAlgebra{T <: MPolyRing{<:MPoly}} <: AbstractDORing
 end
 unwrap(D::WeylAlgebra) = D.WAlg
 (D::WeylAlgebra)(num::Union{Rational, Integer}) = WAlgElem(D, unwrap(D)(num))
+function (D::WeylAlgebra)(poly::MPoly)
+    !(parent(poly) == unwrap(D)) && throw(DomainError("$poly is not an element of $(unwrap(D))"))
+    return WAlgElem(D, poly)
+end
 
 elem_type(D::Union{Type{WeylAlgebra{T}}, WeylAlgebra{T}}) where {S <: MPoly, T <: MPolyRing{S}} = WAlgElem{Generic.MPoly{S}}
 

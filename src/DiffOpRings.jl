@@ -20,6 +20,11 @@ struct DiffOpRing{T <: MPolyRing{<:RatFuncElem}} <: AbstractDORing
 end
 unwrap(R::DiffOpRing) = R.DOR
 (R::DiffOpRing)(num::Union{Rational, Integer}) = DORElem(R, unwrap(R)(num))
+function (R::DiffOpRing)(poly::MPoly)
+    !(parent(poly) == unwrap(R)) && throw(DomainError("$poly is not an element of $(unwrap(R))"))
+    return WAlgElem(R, poly)
+end
+
 
 elem_type(D::Union{Type{DiffOpRing{T}}, DiffOpRing{T}}) where {S <: RatFuncElem, T <: MPolyRing{S}} = DORElem{Generic.MPoly{S}}
 

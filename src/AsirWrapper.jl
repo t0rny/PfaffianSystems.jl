@@ -90,8 +90,13 @@ function parseAsir(asir_res::AbstractString)
 	return asir_res |> (s->split(s, "\n")) .|> slash2Dslash
 end
 
-function evalAsir(asir_res::AbstractString, vars_list::Vector{<:AbstractDiffOp})
-	tmpExpr = Meta.parse("asir_tmpFunc($(vec2str(vars_list))) = $(asir_res)")
+"""
+	evalAsir(asir_res::AbstractString, vars_list::Vector{T}) where T <: AbstractDiffOp
+
+Evaluate `asir_res` as a Julia expression.
+"""
+function evalAsir(asir_res::AbstractString, vars_list::Vector{T}) where T <: AbstractDiffOp 
+	tmpExpr = Meta.parse("asir_tmpFunc($(vars_list .|> unwrap |> vec2str)) = $(asir_res)")
 	try
 		eval(tmpExpr)
 	catch
