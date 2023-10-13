@@ -153,10 +153,12 @@ function restriction_DIdeal(I::DIdeal{T}, rest_vars::OrderedSet{T}) where T <: W
 	GB;
 	"""
 
+	@show asir_cmd
+
 	asir_res = asir_cmd |> runAsir |> parseAsir
 	asir_res = filter!((s)->(startswith(s, "[")), asir_res)
 
-	(length(asir_res) != 1) && throw(DomainError("Invalid result from Asir", asir_res))
+	(length(asir_res) != 1) && throw(DomainError("Invalid result from Asir: $asir_res"))
 
 	vars_list = cat(rem_vs, rem_dos; dims=1)
 	restGens = evalAsir(asir_res[1], vars_list)
@@ -245,10 +247,34 @@ function multiplication_DIdeal(I::DIdeal{T}, J::DIdeal{T}) where T <: WAlgElem
 	vs_dummy = vall[nvars(D)+1:end]
 	dos_dummy = dvall[nvars(D)+1:end]
 
-	Igens = [evaluate(g, dos, dos .+ dos_dummy) for g in gens(D2(I))]
-	Igens = vcat(Igens, [evaluate(g, [vs; dos], [vs .- vs_dummy; -dos_dummy]) for g in gens(D2(J))])
+	Jgens = [evaluate(g, [vs; dos], [vs_dummy; dos_dummy]) for g in gens(D2(J))]
 
-	return restriction_DIdeal(DIdeal(D2, Igens), vs_dummy) |> D
+	Igens = [evaluate(g, dos, dos .+ dos_dummy) for g in gens(D2(I))]
+	Jgens = [evaluate(g, [vs_dummy; dos_dummy], [vs .- vs_dummy; -dos_dummy]) for g in Jgens]
+
+	# Igens = vcat(Igens, [evaluate(g, [vs; dos], [vs .- vs_dummy; -dos_dummy]) for g in gens(D2(J))])
+
+	@show vs
+	@show dos
+
+	@show vs_dummy
+	@show dos_dummy
+
+	@show Igens
+	@show Jgens
+
+	return restriction_DIdeal(DIdeal(D2, [Igens; Jgens]), vs_dummy) |> D
+end
+
+function mult_test()
+D, (x, s1, s2, s3), (dx, ds1, ds2, ds3) = weyl_algebra(["x", "s1", "s2", "s3"])
+
+IHdiff1 = DIdeal(D, [dx^2 - 2*x*dx + 2*(-ds1*s1-1), (-ds1*s1+1)*s1^2 - 2*x*(-ds1*s1+2)*s1 + 2*(-ds1*s1+2)*(-ds1*s1+1), ds2, ds3])
+
+Igauss = DIdeal(D, [dx + 2*x, ds1, ds2, ds3])
+
+multiplication_DIdeal(IHdiff1, Igauss)
+
 end
 
 """

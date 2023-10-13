@@ -114,12 +114,14 @@ Evaluate a differential operator with respect to a set of variables and their co
 The `vars` and `vals` vectors must have the same length, and each element in `vars` must be of the same type as its corresponding element in `vals`.
 
 # Examples
+```jldoctest
 julia> D, (x, y), (dx, dy) = weyl_algebra(["x", "y"])
 (2-d Weyl algebra in [x,y], PfaffianSystems.WAlgElem{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.Generic.MPoly{Rational{BigInt}}}}[x, y], PfaffianSystems.WAlgElem{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.Generic.MPoly{Rational{BigInt}}}}[dx, dy])
 julia> evaluate(x*dx+y, [x], [x + y])
 (x + y)*dx + y
 julia> evaluate(x*dx + y, [dx], [dx+dy])
 x*dx + x*dy + y
+```
 """
 function evaluate(dop::T, vrs::Vector{T}, vls::Vector{T}) where T <: AbstractDiffOp
     coefs = coefficients(unwrap(dop)) |> collect
