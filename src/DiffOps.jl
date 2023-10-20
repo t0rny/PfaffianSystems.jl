@@ -1,5 +1,13 @@
 ############################################################
 # 
+# Common utilities for rings of differential operators
+# 
+############################################################
+
+coef_ring(D::AbstractDORing) = D |> unwrap |> base_ring
+
+############################################################
+# 
 # Common utilities for differential operators
 # 
 ############################################################

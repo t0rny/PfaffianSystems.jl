@@ -94,8 +94,10 @@ end
 	evalAsir(asir_res::AbstractString, vars_list::Vector{T}) where T <: AbstractDiffOp
 
 Evaluate `asir_res` as a Julia expression.
+The output may be `Vector{Any}` and needs to be converted if necessary.
 """
-function evalAsir(asir_res::AbstractString, vars_list::Vector{T}) where T <: AbstractDiffOp 
+# function evalAsir(asir_res::AbstractString, vars_list::Vector{T}) where T <: AbstractDiffOp 
+function evalAsir(asir_res::AbstractString, vars_list::Vector) 
 	tmpExpr = Meta.parse("asir_tmpFunc($(vars_list |> vec2str)) = $(asir_res)")
 	try
 		eval(tmpExpr)
@@ -103,5 +105,6 @@ function evalAsir(asir_res::AbstractString, vars_list::Vector{T}) where T <: Abs
 		@assert false "Error: somthing wrong in evaluating $(asir_res)"
 	end
 
-	return parent(vars_list[1]).(@invokelatest asir_tmpFunc(unwrap.(vars_list)...))
+	return @invokelatest asir_tmpFunc(vars_list...)
+	# return parent(vars_list[1]).(@invokelatest asir_tmpFunc(unwrap.(vars_list)...))
 end
