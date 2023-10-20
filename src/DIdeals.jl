@@ -320,7 +320,7 @@ function pfaffian_system2(I::DIdeal{T}, sm::OrderedSet{T}) where T <: DORElem
 	V = [$(vec2str(v))]\$
 	yang.define_ring(["partial", V])\$
 	Gb = yang.gr([$(vec2str(gens(I)))])\$
-	Pf = yang.pf([$(vec2str(sm))], Gb)\$
+	Pf = yang.pf([$(vec2str(sm |> collect))], Gb)\$
 	for (I=0; I < $n; I++){
 		print(Pf[I])\$
 	}
