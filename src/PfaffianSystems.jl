@@ -33,6 +33,6 @@ include("DiffOpRings.jl")
 export diff_op_ring, coerce, elem_type, wnormalform, normalform, leading_term, pfaffian_system, pfaffian_system2	
 
 include("DIdeals.jl")
-export DIdeal, intersection_DIdeals, restriction_DIdeal, integration_DIdeal, multiplication_DIdeal, stdmon
+export DIdeal, intersection_DIdeals, restriction_DIdeal, integration_DIdeal, multiplication_DIdeal, stdmon, pfaffian_system2
 
 end

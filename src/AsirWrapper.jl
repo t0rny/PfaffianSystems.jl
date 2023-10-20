@@ -23,19 +23,17 @@ end
 
 """
 	vec2str(v::AbstractVector; delim=",")
-	vec2str(v::AbstractDiffOp; delim=",")
-	vec2str(vs...; delim=",")
 Return a string consiting of all elements of `v` with delimiter `delim`. 
 """
 vec2str(v::AbstractVector; delim=",") = string.(v) |> (s->join(s, delim))
-vec2str(v::AbstractDiffOp; delim=",") = string(v)
-function vec2str(vs...; delim=",")
-	strs = Vector{String}()
-	for v in vs
-		v |> vec2str |> (s->push!(strs, s))
-	end
-	return join(strs, delim)
-end
+# vec2str(v::AbstractDiffOp; delim=",") = string(v)
+# function vec2str(vs...; delim=",")
+# 	strs = Vector{String}()
+# 	for v in vs
+# 		v |> vec2str |> (s->push!(strs, s))
+# 	end
+# 	return join(strs, delim)
+# end
 
 
 """
@@ -108,3 +106,4 @@ function evalAsir(asir_res::AbstractString, vars_list::Vector)
 	return @invokelatest asir_tmpFunc(vars_list...)
 	# return parent(vars_list[1]).(@invokelatest asir_tmpFunc(unwrap.(vars_list)...))
 end
+evalAsir(asir_res::AbstractString, vars_list::Vector{<:AbstractDiffOp}) = evalAsir(asir_res, unwrap.(vars_list))

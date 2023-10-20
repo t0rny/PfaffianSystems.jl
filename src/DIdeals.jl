@@ -94,7 +94,7 @@ function intersection_DIdeals(Is::DIdeal{T}...) where T <: WAlgElem
 	asir_cmd = 
 	"""
 	load("nk_restriction.rr")\$
-	V = [$(vec2str(vall, dvall))]\$
+	V = [$(vec2str([vall; dvall]))]\$
 	M = nk_restriction.make_elim_order_mat($m, $(length(v)))\$
 	J = [$(vec2str(genJ))]\$
 	GB = nd_weyl_gr(J, V, 0, M);
@@ -104,7 +104,7 @@ function intersection_DIdeals(Is::DIdeal{T}...) where T <: WAlgElem
 
 	(length(asir_res) != 1) && throw(DomainError("Invalid result from Asir", asir_res))
 
-	elimOrdGens = D.(evalAsir(asir_res[1], [vall; dvall]))
+	elimOrdGens = Dt.(evalAsir(asir_res[1], [vall; dvall]))
 
 	notHasTmpVar(dop) = (vars(dop), [t; dt]) |> (s-> intersect(s...)) |> isempty
 
@@ -289,16 +289,30 @@ function stdmon(I::DIdeal{T}, ordered_vars::OrderedSet{T}) where T <: DORElem
 
 	D = base_ring(I)
 	vars_list = [gens(D); dgens(D)]
-	return D.(evalAsir(asir_res[1], vars_list)) |> reverse!
+	return D.(evalAsir(asir_res[1], vars_list)) |> reverse
 end
 stdmon(I::DIdeal) = stdmon(I, OrderedSet(gens(base_ring(I))))
 stdmon(I::DIdeal, vars::Vector) = stdmon(I, vars |> OrderedSet)
 
-function pfaffian_system2(I::DIdeal{T}, ordered_vars::OrderedSet{T}) where T <: DORElem
-	# v = gens(base_ring(I))
-	v = collect(ordered_vars)
+"""
+    pfaffian_system2(G::Vector{T}, S::Vector{T}) where T <: DORElem
+
+# Examples
+
+```jldoctest
+julia> R, (x, y), (dx, dy) = diff_op_ring(["x", "y"])
+(2-dimensional ring of differential opeartors in [x,y], PfaffianSystems.DORElem{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.Generic.RationalFunctionFieldElem{Rational{BigInt}, AbstractAlgebra.Generic.MPoly{Rational{BigInt}}}}}[x, y], PfaffianSystems.DORElem{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.Generic.RationalFunctionFieldElem{Rational{BigInt}, AbstractAlgebra.Generic.MPoly{Rational{BigInt}}}}}[dx, dy])
+julia> pfaffian_system2([dx^2 + 1, dy^2 + 1], [one(dx), dx, dy])
+2-element Vector{Matrix{AbstractAlgebra.Generic.RationalFunctionFieldElem{Rational{BigInt}, AbstractAlgebra.Generic.MPoly{Rational{BigInt}}}}}:
+ [0 1 0; -1 0 0; 0 0 0]
+ [0 0 1; 0 0 0; -1 0 0]
+```
+"""
+function pfaffian_system2(I::DIdeal{T}, sm::OrderedSet{T}) where T <: DORElem
+	v = gens(base_ring(I))
+	# v = collect(ordered_vars)
 	n = length(v)
-	sm = stdmon(I, ordered_vars)
+	# sm = stdmon(I, ordered_vars)
 	d = length(sm)
 	asir_cmd = 
 	"""
@@ -311,6 +325,8 @@ function pfaffian_system2(I::DIdeal{T}, ordered_vars::OrderedSet{T}) where T <: 
 		print(Pf[I])\$
 	}
 	"""
+
+	@show asir_cmd
 
 	asir_res = runAsir(asir_cmd) |> parseAsir
 	asir_res = filter!((s->startswith(s, "[")), asir_res)
@@ -329,6 +345,7 @@ function pfaffian_system2(I::DIdeal{T}, ordered_vars::OrderedSet{T}) where T <: 
 	# (length(asir_res) != 1) && throw(DomainError("Invalid result from Asir", asir_res))
 	return p
 end
+pfaffian_system2(I::DIdeal{T}, vars::Vector{T}) where T <: DORElem = pfaffian_system2(I, OrderedSet(vars))
 pfaffian_system2(I::DIdeal) = pfaffian_system2(I, OrderedSet(gens(base_ring(I))))
 
 # function stdmon!(I::DIdeal, ordered_vars::OrderedSet{Num})
