@@ -184,12 +184,19 @@ diff_op_ring(s::AbstractString,n::Integer) = diff_op_ring(QQ, s, n)
 # 
 ############################################################
 
+function grevlex_tie_break(x::Vector{<:Int}, y::Vector{<:Int})
+    last_nz_idx = findlast(x-y .!= 0)
+    (x-y)[last_nz_idx] < 0 && return true
+    return false
+end
+
 """
     leading_term(f::DORElem, order::Symbol=:lex)
 Return the leading term of `f` with respect to `order`. 
-Only `order=:lex` is supported now.
+Only `order=:lex` and `order=:grevlex` are supported now.
+Default value of `order` is `:grevlex`.
 """
-function leading_term(f::DORElem; order::Symbol=:lex)
+function leading_term(f::DORElem; order::Symbol=:grevlex)
     f == zero(parent(f)) && return zero(parent(f))
     f_coes = coefficients(f)
     f_mons = monomials(f)
@@ -199,16 +206,18 @@ function leading_term(f::DORElem; order::Symbol=:lex)
     elseif order == :revlex
     elseif order == :grlex
     elseif order == :grevlex
-        exp_sum = [sum(i) for i in exponent_vectors(f)]
+        exps = exponent_vectors(f)
+        exp_sum = sum.(exps)
         exp_max = findall(x->x==maximum(exp_sum), exp_sum)
-        for i in 1:size(dgens(parent(f)))[1]
-            for j in exp_max
-                # exponent_vectors(f)[j][]
+        sort!(exp_max, rev=true, lt = (x,y) -> grevlex_tie_break(exps[x], exps[y]))
+        return DORElem(parent(f), f_coes[exp_max[1]] * f_mons[exp_max[1]])
+        # for i in 1:size(dgens(parent(f)))[1]
+        #     # for j in exp_max
+        #     #     # exponent_vectors(f)[j][]
 
 
-            end
-
-        end
+        #     # end
+        # end
     end
 end
 
@@ -216,19 +225,19 @@ end
     normalform(f::T, G::Vector{T}) where T<: DORElem
 Compute normal form of `f` with respect to `G` and return the remainder `r` and quotients `q`.
 """
-function normalform(f::T, G::Vector{T}) where T<: DORElem
+function normalform(f::T, G::Vector{T}; order::Symbol=:grevlex) where T<: DORElem
     r = zero(parent(f))
     q = [zero(parent(f)) for _ in G]
 
     while f != zero(parent(f))
-        r_1, q_1 = wnormalform(f, G)
-        r = r + leading_term(r_1)
+        r_1, q_1 = wnormalform(f, G, order=order)
+        r = r + leading_term(r_1, order=order)
 
         for i in 1:size(q)[1]
             q[i] = q[i] + q_1[i]
         end
 
-        f = r_1 - leading_term(r_1)
+        f = r_1 - leading_term(r_1, order=order)
     end
     return r, q
 end
@@ -237,7 +246,7 @@ end
   wnormalform(f::T, G::Vector{T}) where T<: DORElem
 Compute weak normal form of `f` with respect to `G` and return the remainder `r` and quotients `q`.
 """
-function wnormalform(f::T, G::Vector{T}) where T<: DORElem
+function wnormalform(f::T, G::Vector{T}; order::Symbol=:grevlex) where T<: DORElem
     r = f
     n = nvars(parent(f))
     q = [zero(parent(f)) for _ in G]
@@ -248,8 +257,8 @@ function wnormalform(f::T, G::Vector{T}) where T<: DORElem
         for (i, g) in enumerate(G)
             r == zero(parent(f)) && break
 
-            lt_r = leading_term(r)
-            lt_g = leading_term(g)
+            lt_r = leading_term(r, order=order)
+            lt_g = leading_term(g, order=order)
             lc_r = coefficients(lt_r)[1]
             lc_g = coefficients(lt_g)[1]
             a = exponent_vectors(lt_r)[1] - exponent_vectors(lt_g)[1]
@@ -295,7 +304,7 @@ function pfaffian_system(G::Vector{T}, S::Vector{T}) where T <: DORElem
     p = [fill(zero(R), d, d) for _ in 1:n]
     for i in eachindex(p)
         for j = 1:d
-            nf_ds1 = normalform(dops[i] * S[j], G)[1]
+            nf_ds1 = normalform(dops[i] * S[j], G, order=:grevlex)[1]
             nf_ds1_coef = coefficients(nf_ds1)
             nf_ds1_mono = monomials(nf_ds1)
 
