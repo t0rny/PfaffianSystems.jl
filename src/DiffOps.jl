@@ -124,8 +124,8 @@ x*dx + x*dy + y
 ```
 """
 function evaluate(dop::T, vrs::Vector{T}, vls::Vector{T}) where T <: AbstractDiffOp
-    coefs = coefficients(unwrap(dop)) |> collect
-    mons = monomials(unwrap(dop)) |> collect
+    coefs = coefficients(dop) |> collect
+    mons = monomials(dop) |> collect
     m_ring = parent(mons[1])
 
     v_pairs = [Vector{typeof(coefs[1])}(undef, 0), Vector{typeof(coefs[1])}(undef, 0)]
@@ -295,7 +295,7 @@ Returns:
 function monomials(f::T) where T <: AbstractDiffOp
 
     f_mons = f |> unwrap |> monomials |> collect
-    f_mons = collect(f_mons .|> (s->T(parent(f), s)))
+    # f_mons = collect(f_mons .|> (s->T(parent(f), s)))
 
     return f_mons
 end

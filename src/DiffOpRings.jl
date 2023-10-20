@@ -189,13 +189,13 @@ diff_op_ring(s::AbstractString,n::Integer) = diff_op_ring(QQ, s, n)
 Return the leading term of `f` with respect to `order`. 
 Only `order=:lex` is supported now.
 """
-function leading_term(f::DORElem, order::Symbol=:lex)
+function leading_term(f::DORElem; order::Symbol=:lex)
     f == zero(parent(f)) && return zero(parent(f))
     f_coes = coefficients(f)
     f_mons = monomials(f)
     if order == :lex
-        f_mon = f_mons[1] |> unwrap
-        return DORElem(parent(f), f_coes[1] * f_mon)
+        # f_mon = f_mons[1] |> unwrap
+        return DORElem(parent(f), f_coes[1] * f_mons[1])
     elseif order == :revlex
     elseif order == :grlex
     elseif order == :grevlex
