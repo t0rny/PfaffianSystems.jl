@@ -286,7 +286,7 @@ function stdmon(I::DIdeal{T}, ordered_vars::OrderedSet{T}) where T <: DORElem
 	(length(asir_res) != 1) && throw(DomainError("Invalid result from Asir", asir_res))
 
 	vars_list = [gens(base_ring(I)); dgens(base_ring(I))]
-	return evalAsir(asir_res[1], vars_list)
+	return evalAsir(asir_res[1], vars_list) |> reverse!
 end
 stdmon(I::DIdeal) = stdmon(I, OrderedSet(gens(base_ring(I))))
 stdmon(I::DIdeal, vars::Vector) = stdmon(I, vars |> OrderedSet)
